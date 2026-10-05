@@ -1,6 +1,6 @@
 from models.catalog.catalog_item import CatalogItem
 
-class Cable(CatalogItem):
+class Fan(CatalogItem):
     def __init__(self, code, name, price, description, brand, stock, size, max_rpm, cfm, static_pressure, bearing_type, connector_type, lighting, noise_level, led_number, voltage):
         super().__init__(code, name, price, description, brand, stock)
         self._size = size

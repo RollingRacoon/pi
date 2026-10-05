@@ -1,9 +1,9 @@
 from models.catalog.catalog_item import CatalogItem
 
-class Cable(CatalogItem):
-    def __init__(self, code, name, price, description, brand, stock, type, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply):
+class Adapter(CatalogItem):
+    def __init__(self, code, name, price, description, brand, stock, adapter_type, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply):
         super().__init__(code, name, price, description, brand, stock)
-        self._type = type
+        self._adapter_type = adapter_type
         self._input_connector = input_connector
         self._output_connector = output_connector        
         self._source_interface = source_interface        

@@ -1,9 +1,9 @@
 from models.catalog.catalog_item import CatalogItem
 
 class PCCase(CatalogItem):
-    def __init__(self, code, name, price, description, brand, stock, format, form_factor, max_gpu_length, max_cooler_height, supported_radiator, fan_number, panel_type):
+    def __init__(self, code, name, price, description, brand, stock, pc_case_format, form_factor, max_gpu_length, max_cooler_height, supported_radiator, fan_number, panel_type):
         super().__init__(code, name, price, description, brand, stock)
-        self._format = format
+        self._pc_case_format = pc_case_format
         self._form_factor = form_factor
         self._max_gpu_length = max_gpu_length
         self._max_cooler_height = max_cooler_height
