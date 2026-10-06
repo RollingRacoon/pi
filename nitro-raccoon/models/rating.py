@@ -1,7 +1,7 @@
 class Rating:
-    def __init__(self, costumer, rating):
-        self._costumer = costumer
+    def __init__(self, user, rating):
+        self._user = user
         self._rating = rating
 
     def __str__(self):
-        return f'{self._costumer}: {self._rating}'
+        return f'{self._user}: {self._rating}'

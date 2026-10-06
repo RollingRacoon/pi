@@ -11,3 +11,8 @@ class CatalogItem:
 
     def __str__(self):
         return self._name
+
+    def define_stock(self, new_stock):
+        if new_stock not in CatalogItem.VALID_STATUS:
+            raise ValueError(f'Status inválido: {new_stock}')
+        self.stock = new_stock
