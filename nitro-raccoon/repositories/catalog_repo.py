@@ -212,13 +212,13 @@ def save(item):
     connection.commit()
     connection.close()
 
-def seek_by_id(id):
+def seek_by_items_id(items_id):
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT id, name, item_type, stock "
-        "FROM items_catalog WHERE id = %s",
-        (id,)
+        "SELECT items_id, name, item_type, stock "
+        "FROM items_catalog WHERE items_id = %s",
+        (items_id,)
     )
     line = cursor.fetchone()
     connection.close()
@@ -226,26 +226,26 @@ def seek_by_id(id):
     if line is None:
         return None
 
-    id, name, item_type, stock = line
+    items_id, name, item_type, stock = line
     catalog_item = CatalogItem(name, item_type)
     catalog_item.define_stock(stock)
-    catalog_item.id = id
+    catalog_item.items_id = items_id
     return catalog_item
 
 def list_all():
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT id, code, name, price, type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed"
+        "SELECT items_id, code, name, price, type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed"
     )
     lines = cursor.fetchall()
     connection.close()
 
     items_catalog = []
-    for id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed in lines:
-        item = CatalogItem(id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed)
+    for items_id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed in lines:
+        item = CatalogItem(items_id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed)
         item.define_stock(stock)
-        item.id = id
+        item.items_id = items_id
         items_catalog.append(item)
     return items_catalog
 
@@ -304,35 +304,35 @@ def list_by_stock(stock):
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT id, name, item_type, stock "
+        "SELECT items_id, name, item_type, stock "
         "FROM items_catalog WHERE stock = %s",
         (stock,)
     )
     lines = cursor.fetchall()
     connection.close()
 
-def update_status(item_id, new_stock):
+def update_stock(items_id, new_stock):
     if new_stock not in CatalogItem.STATUS_VALIDOS:
         raise ValueError(f'Estoque inválido: {new_stock}')
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "UPDATE items_catalog SET stock = %s WHERE id = %s", (new_stock, item_id)
+        "UPDATE items_catalog SET stock = %s WHERE items_id = %s", (new_stock, items_id)
     )
     connection.commit()
     connection.close()
 
-def list_complete(id):
+def list_complete(items_id):
     from repositories import rating_repo, catalog_repo
 
-    catalog_item = seek_by_id(id)
+    catalog_item = seek_by_items_id(id)
     if catalog_item is None:
         return None
 
-    for rating in rating_repo.list_score_by_item(id):
+    for rating in rating_repo.list_score_by_item(items_id):
         catalog_item._avaliacao.append(rating)
 
-    for item in catalog_repo.list_by_category(id):
+    for item in catalog_repo.list_by_category(items_id):
         catalog_item.add_to_catalog(item)
 
     return catalog_item

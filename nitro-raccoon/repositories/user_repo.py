@@ -7,7 +7,7 @@ def create_users():
     cursor = connection.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT AUTO_INCREMENT PRIMARY KEY,
             nome VARCHAR(100) NOT NULL,
             email VARCHAR(150) NOT NULL UNIQUE,
             hash_password VARCHAR(255) NOT NULL,
@@ -30,14 +30,14 @@ def save(user):
     generated_id = cursor.lastrowid
     connection.close()
 
-    user.id = generated_id
+    user.user_id = generated_id
     return generated_id
 
 def seek_by_email(email):
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT id, name, email, hash_password, is_admin FROM users WHERE email = %s", (email,)
+        "SELECT user_id, name, email, hash_password, is_admin FROM users WHERE email = %s", (email,)
     )
     line = cursor.fetchone()
     connection.close()
@@ -47,14 +47,14 @@ def seek_by_email(email):
 
     user_id, name, email, hash_password, is_admin = line
     user = User(name, email, hash_password, is_admin=bool(is_admin))
-    user.id = user_id
+    user.user_id = user_id
     return user
 
 def seek_by_id(user_id):
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT id, name, email, hash_password, is_admin FROM user WHERE id = %s", (user_id,)
+        "SELECT user_id, name, email, hash_password, is_admin FROM user WHERE user_id = %s", (user_id,)
     )
     line = cursor.fetchone()
     connection.close()
@@ -63,5 +63,5 @@ def seek_by_id(user_id):
         return None
     user_id, name, email, hash_password, is_admin = line
     user = User(name, email, hash_password, is_admin=bool(is_admin))
-    user.id = user_id
+    user.user_id = user_id
     return user
