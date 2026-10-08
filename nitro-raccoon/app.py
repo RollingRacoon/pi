@@ -195,7 +195,7 @@ def sign_in():
 
         user = User(name, email, hash_password)
         user_repo.save(user)
-        return redirect(url_for(login))
+        return redirect(url_for('login'))
 
     return render_template('sign_in.html')
 

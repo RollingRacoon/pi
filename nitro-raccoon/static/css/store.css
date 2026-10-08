@@ -1,0 +1,314 @@
+:root {
+  --void: #0B0713;
+  --panel: #130A22;
+  --board: #1A0D33;
+  --violet: #8B3DFF;
+  --violet-soft: #C9A2FF;
+  --magenta: #E01FD0;
+  --orange: #FF7A1A;
+  --text: #EDE6FA;
+  --muted: #A596C2;
+  --edge: #3A2563;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--void);
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+ul { list-style: none; margin: 0; padding: 0; }
+h1, h2, h3 { margin: 0; font-family: "Chakra Petch", system-ui, sans-serif; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+/* ---------- Cabeçalho ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(11, 7, 19, 0.96);
+  border-bottom: 1px solid var(--edge);
+}
+
+.topbar-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.375rem;
+  color: #fff;
+  text-decoration: none;
+  text-shadow: 0 0 18px rgba(139, 61, 255, 0.8);
+}
+.logo-link img { filter: drop-shadow(0 0 8px rgba(224, 31, 208, 0.5)); }
+
+.search input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+}
+.search input::placeholder { color: var(--muted); }
+.search input:hover { border-color: #5B3C99; }
+.search input:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px rgba(139, 61, 255, 0.35), 0 0 16px rgba(139, 61, 255, 0.35);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+.account a { color: var(--violet-soft); text-underline-offset: 3px; text-decoration: none; }
+.account a:hover { color: var(--orange); text-decoration: underline; }
+.hello { color: var(--muted); }
+.account .logout {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+}
+.account .logout:hover { border-color: var(--orange); text-decoration: none; }
+
+.cats {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+.cats a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9375rem;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+}
+.cats a span { font-size: 0.8125rem; color: var(--muted); }
+.cats a:hover { border-color: var(--violet); background: var(--board); }
+
+/* ---------- Conteúdo ---------- */
+main { max-width: 80rem; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem 3rem;
+  background:
+    radial-gradient(60% 120% at 85% 50%, rgba(224, 31, 208, 0.38), transparent 70%),
+    linear-gradient(rgba(201, 162, 255, 0.07) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, rgba(201, 162, 255, 0.07) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(120deg, #2A1157, #12071F 75%);
+  border: 1px solid var(--edge);
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px));
+}
+.hero-copy { max-width: 34rem; }
+.hero h1 {
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 0 28px rgba(139, 61, 255, 0.8);
+}
+.hero p { margin: 0.875rem 0 1.5rem; color: var(--violet-soft); max-width: 44ch; }
+.hero-logo {
+  flex: none;
+  width: clamp(8rem, 20vw, 14rem);
+  height: auto;
+  filter: drop-shadow(0 0 28px rgba(224, 31, 208, 0.55));
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.75rem;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(90deg, var(--violet), var(--magenta));
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.btn:hover { filter: brightness(1.15) saturate(1.1); }
+
+/* ---------- Prateleiras por categoria ---------- */
+.shelf { margin-top: 2.5rem; scroll-margin-top: 8.5rem; }
+
+.shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--edge);
+}
+.shelf-head h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  text-shadow: 0 0 16px rgba(139, 61, 255, 0.55);
+}
+.count { color: var(--muted); font-size: 0.9375rem; }
+
+.toggle {
+  margin-left: auto;
+  padding: 0.3rem 0.75rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--violet-soft);
+  background: none;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.toggle:hover { color: var(--orange); border-color: var(--orange); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: 1rem;
+}
+.shelf:not(.open):not(.searching) .product.extra { display: none; }
+
+.product {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+}
+.product:hover, .product:focus-within { border-color: var(--violet); }
+
+.thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background:
+    radial-gradient(70% 70% at 50% 45%, rgba(139, 61, 255, 0.35), transparent 75%),
+    var(--board);
+  border-bottom: 1px solid var(--edge);
+}
+.chip-icon { width: 44%; height: auto; aspect-ratio: 1; color: var(--violet-soft); opacity: 0.7; }
+
+.info { display: flex; flex-direction: column; flex: 1; gap: 0.25rem; padding: 0.875rem 1rem 1rem; }
+.brand-tag { font-size: 0.8125rem; color: var(--muted); }
+
+.info h3 {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.9875rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
+}
+.info h3 a { text-decoration: none; }
+.info h3 a:hover { color: var(--violet-soft); }
+
+.price {
+  margin: 0.5rem 0 0.75rem;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.375rem;
+  color: var(--orange);
+}
+
+.btn-outline {
+  margin-top: auto;
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--violet-soft);
+  text-decoration: none;
+  border: 1px solid var(--violet);
+  border-radius: 2px;
+}
+.btn-outline:hover { color: #fff; background: linear-gradient(90deg, var(--violet), var(--magenta)); border-color: transparent; }
+
+/* ---------- Estados vazios ---------- */
+.empty {
+  margin-top: 2.5rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background: var(--panel);
+  border: 1px dashed var(--edge);
+}
+.empty h2 { font-size: 1.5rem; color: #fff; }
+.empty p { margin: 0.5rem 0 1.25rem; color: var(--muted); }
+#no-results p { margin-bottom: 0; }
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  border-top: 1px solid var(--edge);
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 900px) {
+  .topbar-main { grid-template-columns: 1fr auto; gap: 0.75rem 1rem; padding: 0.75rem 1rem; }
+  .search { grid-column: 1 / -1; order: 3; }
+  .account .hello, .account a:not(.logout) { display: none; }
+  .cats { padding: 0 1rem 0.75rem; }
+  main { padding: 1rem 1rem 2.5rem; }
+  .shelf { scroll-margin-top: 10.5rem; }
+}
+
+@media (max-width: 600px) {
+  .hero { padding: 1.5rem; }
+  .hero-logo { display: none; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
+  .info { padding: 0.75rem; }
+  .price { font-size: 1.125rem; }
+}

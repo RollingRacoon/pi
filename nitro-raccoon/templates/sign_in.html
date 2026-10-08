@@ -1,0 +1,32 @@
+{% extends "auth_base.html" %}
+{% block title %}Criar conta{% endblock %}
+
+{% block content %}
+<h1>Criar conta</h1>
+<p class="lead">Cadastre-se para consultar o catálogo e avaliar componentes.</p>
+
+{% if error %}
+  <div class="error" role="alert">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('sign_in') }}" novalidate>
+  <div class="field">
+    <label for="name">Nome</label>
+    <input type="text" id="name" name="name" autocomplete="name" required autofocus>
+  </div>
+
+  <div class="field">
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" autocomplete="email" required>
+  </div>
+
+  <div class="field">
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+  </div>
+
+  <button type="submit" class="btn">Criar conta</button>
+</form>
+
+<p class="switch">Já tem uma conta? <a href="{{ url_for('login') }}">Entrar</a></p>
+{% endblock %}

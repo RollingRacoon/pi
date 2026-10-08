@@ -19,30 +19,6 @@ from models.catalog.storage import Storage
 from models.catalog.water_cooler import WaterCooler
 
 def save(item):
-    # Todas as variáveis começam como None; cada tipo preenche só as suas
-    adapter_type = air_cooler_type = cable_type = keyboard_type = microphone_type = None
-    mouse_pad_type = psu_type = ram_type = storage_type = water_cooler_type = None
-    item_connection = socket = socket_compatibility = chipset = interface = None
-    form_factor = pc_case_format = storage_format = size = lighting = material = None
-    length = width = thickness = voltage = capacity = frequency = None
-    input_connector = output_connector = source_interface = target_interface = None
-    compatibility = version = transfer_speed = max_power = max_resolution = None
-    requires_power_supply = None
-    supported_tdp = fan_rotation = fan_number = radiator_size = None
-    cores = threads = base_frequency = turbo_frequency = cache = tdp = None
-    max_rpm = cfm = static_pressure = bearing_type = connector_type = None
-    noise_level = led_number = None
-    vram = memory_type = clock = consumption = None
-    layout = switch = key_count = None
-    polar_pattern = sensitivity = sampling_rate = None
-    resolution = refresh_rate = response = display_type = proportion = None
-    ram_slots = ram_capacity = m2_slots = pcie_slots = None
-    sensor = dpi = button_count = polling_rate = weight = None
-    non_slip_base = None
-    max_gpu_length = max_cooler_height = supported_radiator = panel_type = None
-    potency = certification = modularity = fan = connectors = None
-    modules = latency = None
-    reading_speed = writing_speed = None
 
     if isinstance(item, Adapter):
         item_type = 'adapter'

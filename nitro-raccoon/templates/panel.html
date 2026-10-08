@@ -1,0 +1,158 @@
+{#
+  Painel / catálogo principal.
+  Espera `items` (lista de CatalogItem ativos). Usa `current_user` (context processor).
+  Atributos usados de cada item: id, name, brand, price, item_type.
+#}
+{% macro brl(v) -%}
+R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#', '.') }}
+{%- endmacro %}
+
+{% set labels = {
+  'cpu': 'Processadores',
+  'mother_board': 'Placas-mãe',
+  'gpu': 'Placas de vídeo',
+  'ram': 'Memórias RAM',
+  'storage': 'Armazenamento',
+  'psu': 'Fontes',
+  'pc_case': 'Gabinetes',
+  'air_cooler': 'Air coolers',
+  'water_cooler': 'Water coolers',
+  'fan': 'Ventoinhas',
+  'monitor': 'Monitores',
+  'keyboard': 'Teclados',
+  'mouse': 'Mouses',
+  'mouse_pad': 'Mousepads',
+  'microphone': 'Microfones',
+  'adapter': 'Adaptadores',
+  'cable': 'Cabos'
+} %}
+
+{% set sections = [] %}
+{% for key, label in labels.items() %}
+  {% set group = items|selectattr('item_type', 'equalto', key)|list %}
+  {% if group %}
+    {% set _ = sections.append({'key': key, 'label': label, 'items': group}) %}
+  {% endif %}
+{% endfor %}
+{% set others = items|rejectattr('item_type', 'in', labels.keys()|list)|list %}
+{% if others %}
+  {% set _ = sections.append({'key': 'outros', 'label': 'Outros', 'items': others}) %}
+{% endif %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0B0713">
+  <title>Catálogo PC</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/logo.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="chip" viewBox="0 0 64 64">
+    <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="16" y="16" width="32" height="32" rx="3"/>
+      <rect x="25" y="25" width="14" height="14" rx="1.5"/>
+      <path d="M24 16V8M32 16V8M40 16V8M24 56v-8M32 56v-8M40 56v-8M16 24H8M16 32H8M16 40H8M56 24h-8M56 32h-8M56 40h-8"/>
+    </g>
+  </symbol>
+</svg>
+
+<header class="topbar">
+  <div class="topbar-main">
+    <a class="logo-link" href="{{ url_for('panel') }}">
+      <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="44" height="44">
+      <span>Catálogo PC</span>
+    </a>
+
+    <form class="search" role="search" onsubmit="return false">
+      <label class="sr-only" for="q">Buscar produtos</label>
+      <input type="search" id="q" placeholder="Buscar por nome, marca ou categoria" autocomplete="off">
+    </form>
+
+    <nav class="account" aria-label="Conta">
+      {% if current_user and current_user.is_admin %}
+        <a href="{{ url_for('pendent_admin') }}">Administração</a>
+      {% endif %}
+      <a href="{{ url_for('register_item') }}">Cadastrar item</a>
+      <span class="hello">Olá, {{ current_user.name if current_user and current_user.name else 'visitante' }}</span>
+      <a class="logout" href="{{ url_for('logout') }}">Sair</a>
+    </nav>
+  </div>
+
+  {% if sections %}
+  <nav class="cats" id="categorias" aria-label="Categorias">
+    {% for s in sections %}
+      <a href="#cat-{{ s.key }}">{{ s.label }} <span>{{ s['items']|length }}</span></a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <h1>Monte o PC do seu jeito</h1>
+      <p>Processadores, placas de vídeo, memórias e periféricos em um só catálogo, com avaliações de quem já montou.</p>
+      {% if sections %}<a class="btn" href="#cat-{{ sections[0].key }}">Ver produtos</a>{% endif %}
+    </div>
+    <img class="hero-logo" src="{{ url_for('static', filename='icons/logo.svg') }}" alt="">
+  </section>
+
+  {% if not sections %}
+    <section class="empty">
+      <h2>Nenhum produto disponível ainda</h2>
+      <p>Assim que um item for cadastrado e aprovado, ele aparece aqui.</p>
+      <a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>
+    </section>
+  {% endif %}
+
+  {% for s in sections %}
+  <section class="shelf" id="cat-{{ s.key }}" aria-labelledby="h-{{ s.key }}">
+    <div class="shelf-head">
+      <h2 id="h-{{ s.key }}">{{ s.label }}</h2>
+      <span class="count">{{ s['items']|length }} {{ 'produto' if s['items']|length == 1 else 'produtos' }}</span>
+      {% if s['items']|length > 5 %}
+        <button type="button" class="toggle" aria-expanded="false" data-label="Ver todos ({{ s['items']|length }})">Ver todos ({{ s['items']|length }})</button>
+      {% endif %}
+    </div>
+
+    <ul class="grid">
+      {% for item in s['items'] %}
+      <li class="product{{ ' extra' if loop.index > 5 }}" data-search="{{ item.name }} {{ item.brand }} {{ s.label }}">
+        <a class="thumb" href="{{ url_for('list_ratings', item_id=item.id) }}" tabindex="-1" aria-hidden="true">
+          <svg class="chip-icon"><use href="#chip"/></svg>
+        </a>
+        <div class="info">
+          <span class="brand-tag">{{ item.brand }}</span>
+          <h3><a href="{{ url_for('list_ratings', item_id=item.id) }}">{{ item.name }}</a></h3>
+          <p class="price">{{ brl(item.price) }}</p>
+          <a class="btn-outline" href="{{ url_for('list_ratings', item_id=item.id) }}">Ver detalhes</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+
+  <section class="empty" id="no-results" hidden>
+    <h2>Nada encontrado para “<span id="no-results-term"></span>”</h2>
+    <p>Confira a ortografia ou busque pela marca ou categoria do produto.</p>
+  </section>
+</main>
+
+<footer class="footer">
+  <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="28" height="28">
+  <span>Catálogo PC</span>
+</footer>
+
+<script src="{{ url_for('static', filename='js/panel.js') }}"></script>
+</body>
+</html>

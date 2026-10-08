@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0B0713">
+  <title>{% block title %}{% endblock %} · Catálogo PC</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+  <aside class="brand">
+    <!-- Trilhas de placa de circuito: elemento decorativo -->
+    <svg class="traces" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-10 90 H120 L160 130 H260 L300 90 H410"/>
+        <path d="M-10 130 H70 L110 170 H190"/>
+        <path d="M-10 170 H30 L70 210 H140 L180 250 H410"/>
+        <path d="M410 330 H290 L250 370 H150 L110 410 H-10"/>
+        <path d="M410 370 H330 L290 410 H220"/>
+        <path d="M410 410 H370 L330 450 H260 L220 490 H-10"/>
+      </g>
+      <circle cx="190" cy="170" r="5" fill="currentColor"/>
+      <circle cx="220" cy="410" r="5" fill="currentColor"/>
+      <circle class="pad" cx="260" cy="130" r="8"/>
+      <circle class="pad" cx="150" cy="370" r="8"/>
+    </svg>
+
+    <img class="logo" src="{{ url_for('static', filename='icons/logo.svg') }}" alt="Logo do Catálogo PC">
+    <a class="brand-name" href="{{ url_for('index') }}">Catálogo PC</a>
+    <p class="brand-text">
+      Componentes de computador com ficha técnica completa e avaliações de quem já montou.
+    </p>
+  </aside>
+
+  <main class="form-side">
+    <div class="card">
+      <div class="card-inner">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </main>
+</body>
+</html>

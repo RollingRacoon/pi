@@ -1,0 +1,245 @@
+{#
+  Cadastro de item.
+  Recebe `sent` (bool). Usa `current_user` (context processor).
+  Cada categoria tem seu bloco de especificações; só o bloco da categoria
+  escolhida fica habilitado, então campos com o mesmo nome (socket, fan, tdp...)
+  nunca chegam duplicados ao Flask.
+  Campos: (name, rótulo, exemplo[, tipo]) — tipo 'n' = número, 'b' = Sim/Não.
+#}
+{% set types = [
+  ('cpu', 'Processador'), ('mother_board', 'Placa-mãe'), ('gpu', 'Placa de vídeo'),
+  ('ram', 'Memória RAM'), ('storage', 'Armazenamento'), ('psu', 'Fonte'),
+  ('pc_case', 'Gabinete'), ('air_cooler', 'Air cooler'), ('water_cooler', 'Water cooler'),
+  ('fan', 'Ventoinha'), ('monitor', 'Monitor'), ('keyboard', 'Teclado'),
+  ('mouse', 'Mouse'), ('mouse_pad', 'Mousepad'), ('microphone', 'Microfone'),
+  ('adapter', 'Adaptador'), ('cable', 'Cabo')
+] %}
+
+{% set specs = {
+  'cpu': [
+    ('socket', 'Soquete', 'AM5'), ('cores', 'Núcleos', '8', 'n'), ('threads', 'Threads', '16', 'n'),
+    ('base_frequency', 'Frequência base (GHz)', '4.2', 'n'), ('turbo_frequency', 'Frequência turbo (GHz)', '5.4', 'n'),
+    ('cache', 'Cache (MB)', '32', 'n'), ('tdp', 'TDP (W)', '105', 'n')],
+  'mother_board': [
+    ('socket', 'Soquete', 'AM5'), ('chipset', 'Chipset', 'B650'), ('form_factor', 'Formato', 'ATX'),
+    ('ram_type', 'Tipo de memória', 'DDR5'), ('ram_slots', 'Slots de RAM', '4', 'n'),
+    ('ram_capacity', 'Capacidade máxima de RAM (GB)', '128', 'n'), ('m2_slots', 'Slots M.2', '2', 'n'),
+    ('pcie_slots', 'Slots PCIe', '3', 'n')],
+  'gpu': [
+    ('chipset', 'Chipset', 'RTX 4070'), ('vram', 'VRAM (GB)', '12', 'n'), ('memory_type', 'Tipo de memória', 'GDDR6X'),
+    ('clock', 'Clock (MHz)', '2475', 'n'), ('consumption', 'Consumo (W)', '200', 'n'),
+    ('length', 'Comprimento (mm)', '300', 'n'), ('interface', 'Interface', 'PCIe 4.0 x16')],
+  'ram': [
+    ('ram_type', 'Tipo', 'DDR5'), ('capacity', 'Capacidade (GB)', '32', 'n'), ('frequency', 'Frequência (MHz)', '6000', 'n'),
+    ('latency', 'Latência', 'CL30'), ('voltage', 'Tensão (V)', '1.35', 'n'), ('modules', 'Módulos', '2', 'n')],
+  'storage': [
+    ('storage_type', 'Tipo', 'SSD NVMe'), ('capacity', 'Capacidade (GB)', '1000', 'n'),
+    ('interface', 'Interface', 'PCIe 4.0 x4'), ('storage_format', 'Formato', 'M.2 2280'),
+    ('reading_speed', 'Leitura (MB/s)', '7000', 'n'), ('writing_speed', 'Gravação (MB/s)', '5000', 'n')],
+  'psu': [
+    ('psu_type', 'Tipo', 'ATX'), ('potency', 'Potência (W)', '750', 'n'), ('certification', 'Certificação', '80 Plus Gold'),
+    ('modularity', 'Modularidade', 'Full modular'), ('form_factor', 'Formato', 'ATX'),
+    ('fan', 'Ventoinha', '120 mm'), ('connectors', 'Conectores', '1x 24 pinos, 2x EPS, 4x PCIe')],
+  'pc_case': [
+    ('pc_case_format', 'Formato do gabinete', 'Mid tower'), ('form_factor', 'Placas-mãe suportadas', 'ATX, mATX, ITX'),
+    ('max_gpu_length', 'Comprimento máx. da GPU (mm)', '380', 'n'), ('max_cooler_height', 'Altura máx. do cooler (mm)', '165', 'n'),
+    ('supported_radiator', 'Radiadores suportados', '360 mm'), ('panel_type', 'Painel lateral', 'Vidro temperado'),
+    ('fan', 'Ventoinhas incluídas', '3x 120 mm')],
+  'air_cooler': [
+    ('air_cooler_type', 'Tipo', 'Torre'), ('socket_compatibility', 'Soquetes compatíveis', 'AM4, AM5, LGA1700'),
+    ('supported_tdp', 'TDP suportado (W)', '220', 'n'), ('size', 'Altura (mm)', '155', 'n'),
+    ('fan_number', 'Quantidade de ventoinhas', '2', 'n'), ('fan_rotation', 'Rotação (RPM)', '1500', 'n'),
+    ('noise_level', 'Ruído (dB)', '25', 'n'), ('lighting', 'Iluminação', 'ARGB')],
+  'water_cooler': [
+    ('water_cooler_type', 'Tipo', 'AIO'), ('radiator_size', 'Radiador', '240 mm'),
+    ('socket_compatibility', 'Soquetes compatíveis', 'AM4, AM5, LGA1700'), ('supported_tdp', 'TDP suportado (W)', '250', 'n'),
+    ('fan_number', 'Quantidade de ventoinhas', '2', 'n'), ('fan_rotation', 'Rotação (RPM)', '1800', 'n'),
+    ('lighting', 'Iluminação', 'ARGB')],
+  'fan': [
+    ('size', 'Tamanho', '120 mm'), ('max_rpm', 'Rotação máxima (RPM)', '1800', 'n'), ('cfm', 'Fluxo de ar (CFM)', '65', 'n'),
+    ('static_pressure', 'Pressão estática (mmH₂O)', '2.1', 'n'), ('bearing_type', 'Rolamento', 'Hidráulico'),
+    ('connector_type', 'Conector', '4 pinos PWM'), ('noise_level', 'Ruído (dB)', '28', 'n'),
+    ('led_number', 'Quantidade de LEDs', '12', 'n'), ('lighting', 'Iluminação', 'ARGB')],
+  'monitor': [
+    ('size', 'Tamanho (polegadas)', '27', 'n'), ('resolution', 'Resolução', '2560x1440'),
+    ('refresh_rate', 'Taxa de atualização (Hz)', '165', 'n'), ('response', 'Tempo de resposta (ms)', '1', 'n'),
+    ('display_type', 'Tipo de painel', 'IPS'), ('proportion', 'Proporção', '16:9'),
+    ('item_connection', 'Conexões', 'HDMI 2.1, DisplayPort 1.4')],
+  'keyboard': [
+    ('keyboard_type', 'Tipo', 'Mecânico'), ('layout', 'Layout', 'ABNT2'), ('switch', 'Switch', 'Red linear'),
+    ('key_count', 'Quantidade de teclas', '87', 'n'), ('form_factor', 'Formato', 'TKL'),
+    ('item_connection', 'Conexão', 'USB, Bluetooth'), ('lighting', 'Iluminação', 'RGB')],
+  'mouse': [
+    ('sensor', 'Sensor', 'PixArt 3395'), ('dpi', 'DPI máximo', '26000', 'n'), ('button_count', 'Quantidade de botões', '6', 'n'),
+    ('polling_rate', 'Taxa de polling (Hz)', '1000', 'n'), ('weight', 'Peso (g)', '63', 'n'),
+    ('item_connection', 'Conexão', 'USB, sem fio 2.4 GHz'), ('lighting', 'Iluminação', 'RGB')],
+  'mouse_pad': [
+    ('mouse_pad_type', 'Tipo', 'Speed'), ('size', 'Tamanho', 'Grande'), ('width', 'Largura (mm)', '400', 'n'),
+    ('length', 'Comprimento (mm)', '900', 'n'), ('thickness', 'Espessura (mm)', '3', 'n'),
+    ('material', 'Material', 'Tecido'), ('non_slip_base', 'Base antiderrapante', '', 'b')],
+  'microphone': [
+    ('microphone_type', 'Tipo', 'Condensador'), ('polar_pattern', 'Padrão polar', 'Cardioide'),
+    ('sensitivity', 'Sensibilidade', '-36 dB'), ('sampling_rate', 'Taxa de amostragem (kHz)', '48', 'n'),
+    ('frequency', 'Resposta de frequência', '20 Hz a 20 kHz'), ('item_connection', 'Conexão', 'USB')],
+  'adapter': [
+    ('adapter_type', 'Tipo', 'Conversor'), ('input_connector', 'Conector de entrada', 'HDMI'),
+    ('output_connector', 'Conector de saída', 'VGA'), ('source_interface', 'Interface de origem', 'HDMI 2.0'),
+    ('target_interface', 'Interface de destino', 'VGA'), ('compatibility', 'Compatibilidade', 'Windows, Linux, macOS'),
+    ('version', 'Versão', '2.0'), ('transfer_speed', 'Velocidade de transferência', '5 Gbps'),
+    ('max_power', 'Potência máxima (W)', '60', 'n'), ('max_resolution', 'Resolução máxima', '4K 60 Hz'),
+    ('requires_power_supply', 'Exige fonte externa', '', 'b')],
+  'cable': [
+    ('cable_type', 'Tipo', 'HDMI'), ('length', 'Comprimento (m)', '2', 'n'), ('connector_type', 'Conectores', 'HDMI macho x HDMI macho'),
+    ('version', 'Versão', '2.1'), ('transfer_speed', 'Velocidade de transferência', '48 Gbps'),
+    ('material', 'Material', 'Nylon trançado')]
+} %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0B0713">
+  <title>Cadastrar item · Catálogo PC</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/logo.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-main">
+    <a class="logo-link" href="{{ url_for('panel') }}">
+      <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="44" height="44">
+      <span>Catálogo PC</span>
+    </a>
+
+    <nav class="account" aria-label="Conta">
+      {% if current_user and current_user.is_admin %}
+        <a href="{{ url_for('pendent_admin') }}">Administração</a>
+      {% endif %}
+      <a href="{{ url_for('register_item') }}" aria-current="page">Cadastrar item</a>
+      <span class="hello">Olá, {{ current_user.name if current_user and current_user.name else 'visitante' }}</span>
+      <a class="logout" href="{{ url_for('logout') }}">Sair</a>
+    </nav>
+  </div>
+</header>
+
+<main class="form-main">
+  <a class="back" href="{{ url_for('panel') }}">Voltar ao catálogo</a>
+
+  <div class="card">
+    <div class="card-inner">
+
+    {% if sent %}
+      <div class="done" role="status">
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="3" opacity=".35"/>
+          <path class="tick" d="M19 33l9 9 17-19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Item enviado para análise</h1>
+        <p class="lead">Ele aparece no catálogo assim que um administrador aprovar o cadastro.</p>
+        <div class="done-actions">
+          <a class="btn" href="{{ url_for('register_item') }}">Cadastrar outro item</a>
+          <a class="btn-outline" href="{{ url_for('panel') }}">Voltar ao catálogo</a>
+        </div>
+      </div>
+
+    {% else %}
+      <h1>Cadastrar item</h1>
+      <p class="lead">Preencha a ficha do componente. Ele entra no catálogo depois de aprovado por um administrador.</p>
+
+      <form method="post" action="{{ url_for('register_item') }}">
+        <input type="hidden" name="stock" value="pendente">
+
+        <fieldset class="section">
+          <legend>Categoria</legend>
+          <div class="types">
+            {% for key, label in types %}
+            <label class="type">
+              <input type="radio" name="item_type" value="{{ key }}" required>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="section">
+          <legend>Informações do item</legend>
+          <div class="fields">
+            <div class="field s4">
+              <label for="name">Nome</label>
+              <input type="text" id="name" name="name" placeholder="Ryzen 7 7800X3D" required>
+            </div>
+            <div class="field s2">
+              <label for="price">Preço</label>
+              <div class="money">
+                <span aria-hidden="true">R$</span>
+                <input type="number" id="price" name="price" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+              </div>
+            </div>
+            <div class="field s3">
+              <label for="brand">Marca</label>
+              <input type="text" id="brand" name="brand" placeholder="AMD" required>
+            </div>
+            <div class="field s3">
+              <label for="code">Código do produto</label>
+              <input type="text" id="code" name="code" placeholder="100-100000910WOF" required>
+            </div>
+            <div class="field s6">
+              <label for="description">Descrição</label>
+              <textarea id="description" name="description" rows="4" placeholder="O que diferencia este item, para que ele serve e o que acompanha."></textarea>
+            </div>
+          </div>
+        </fieldset>
+
+        <p class="hint" id="specs-hint">Escolha uma categoria para ver os campos da ficha técnica.</p>
+
+        {% for key, label in types %}
+        <fieldset class="section specs" data-type="{{ key }}" hidden disabled>
+          <legend>Ficha técnica de {{ label }}</legend>
+          <div class="fields auto">
+            {% for f in specs[key] %}
+              {% set kind = f[3] if f|length > 3 else 't' %}
+              <div class="field">
+                <label for="{{ key }}-{{ f[0] }}">{{ f[1] }}</label>
+                {% if kind == 'b' %}
+                  <select id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}">
+                    <option value="">Não informado</option>
+                    <option>Sim</option>
+                    <option>Não</option>
+                  </select>
+                {% elif kind == 'n' %}
+                  <input type="number" min="0" step="any" inputmode="decimal" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}">
+                {% else %}
+                  <input type="text" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}">
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+        {% endfor %}
+
+        <div class="actions">
+          <button type="submit" class="btn">Enviar para análise</button>
+          <a class="cancel" href="{{ url_for('panel') }}">Cancelar</a>
+        </div>
+      </form>
+    {% endif %}
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="28" height="28">
+  <span>Catálogo PC</span>
+</footer>
+
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>

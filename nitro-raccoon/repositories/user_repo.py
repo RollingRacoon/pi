@@ -8,7 +8,7 @@ def create_users():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(100) NOT NULL,
+            name VARCHAR(100) NOT NULL,
             email VARCHAR(150) NOT NULL UNIQUE,
             hash_password VARCHAR(255) NOT NULL,
             is_admin BOOLEAN NOT NULL DEFAULT FALSE 
@@ -22,9 +22,9 @@ def save(user):
     cursor = connection.cursor()
     cursor.execute(
         """
-        INSERT INTO users (name, email, hash_password, is_admin)
-        VALUES (%s, %s, %s, %s)
-        """
+        INSERT INTO users (name, email, hash_password)
+        VALUES (%s, %s, %s)
+        """, (user.name, user.email, user._hash_password)
     )
     connection.commit()
     generated_id = cursor.lastrowid
@@ -54,7 +54,7 @@ def seek_by_id(user_id):
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT user_id, name, email, hash_password, is_admin FROM user WHERE user_id = %s", (user_id,)
+        "SELECT user_id, name, email, hash_password, is_admin FROM users WHERE user_id = %s", (user_id,)
     )
     line = cursor.fetchone()
     connection.close()
