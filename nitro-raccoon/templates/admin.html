@@ -1,0 +1,72 @@
+{#
+  Itens aguardando aprovação. Recebe `catalog` (itens com stock 'pendente').
+  Aprovar = POST em admin_update_stock com stock 'em estoque'; volta para esta tela.
+#}
+{% extends "store_base.html" %}
+
+{% block title %}Aprovações · Nitro Raccoon{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Aprovações pendentes</h1>
+    <p class="lead">
+      {% if catalog %}
+        {{ catalog|length }} {{ 'item aguarda' if catalog|length == 1 else 'itens aguardam' }} revisão.
+        Confira a ficha técnica e aprove para publicar no catálogo.
+      {% else %}
+        Tudo em dia.
+      {% endif %}
+    </p>
+  </div>
+  <a class="btn-outline" href="{{ url_for('user_admin') }}">Gerenciar usuários</a>
+  <a class="btn-outline" href="{{ url_for('item_admin') }}">Gerenciar todos os itens</a>
+</header>
+
+{% if catalog %}
+  <ul class="queue">
+    {% for item in catalog %}
+      {% set rows = spec_rows(item) %}
+      <li class="ticket">
+        <div class="ticket-main">
+          <div class="ticket-top">
+            <span class="brand-tag">{{ item.brand }}</span>
+            <span class="code">{{ item.code }}</span>
+          </div>
+          <h2><a href="{{ url_for('list_ratings', item_id=item.id) }}">{{ item.name }}</a></h2>
+          <p class="type-line">
+            <span>{{ type_singular.get(item.item_type, 'Outros') }}</span>
+            <span class="price sm">{{ item.price|brl }}</span>
+          </p>
+          {% if item.description %}<p class="desc">{{ item.description|truncate(180) }}</p>{% endif %}
+
+          <details>
+            <summary>Ficha técnica ({{ rows|length }} {{ 'campo' if rows|length == 1 else 'campos' }})</summary>
+            {% if rows %}
+              <dl class="sheet compact">
+                {% for label, text in rows %}
+                  <div><dt>{{ label }}</dt><dd>{{ text }}</dd></div>
+                {% endfor %}
+              </dl>
+            {% else %}
+              <p class="muted">Nenhuma especificação informada.</p>
+            {% endif %}
+          </details>
+        </div>
+
+        <form method="post" action="{{ url_for('admin_update_stock', item_id=item.id) }}">
+          <input type="hidden" name="stock" value="em estoque">
+          <input type="hidden" name="origin" value="pendent_admin">
+          <button type="submit" class="btn">Aprovar e publicar</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <section class="empty">
+    <h2>Nenhum item aguardando aprovação</h2>
+    <p>Quando alguém cadastrar um item, ele aparece aqui para revisão.</p>
+    <a class="btn" href="{{ url_for('item_admin') }}">Ver todos os itens</a>
+  </section>
+{% endif %}
+{% endblock %}

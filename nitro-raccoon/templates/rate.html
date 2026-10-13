@@ -1,0 +1,46 @@
+{#
+  Formulário de avaliação. Recebe `item` e, opcionalmente, `error`.
+  Campos enviados: costumer (nome) e nota (1 a 5), como o Flask espera.
+#}
+{% extends "store_base.html" %}
+
+{% block title %}Avaliar {{ item.name }} · Nitro Raccoon{% endblock %}
+
+{% block content %}
+{% set levels = [(1, 'Ruim'), (2, 'Fraco'), (3, 'Ok'), (4, 'Bom'), (5, 'Ótimo')] %}
+
+<a class="back" href="{{ url_for('list_ratings', item_id=item.id) }}">Voltar ao item</a>
+
+<div class="frame narrow">
+  <div class="frame-in pad">
+    <h1>Avaliar item</h1>
+    <p class="lead">{{ item.brand }} {{ item.name }}</p>
+
+    {% if error %}
+      <div class="error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('rate_item', item_id=item.id) }}">
+      <div class="field">
+        <label for="costumer">Seu nome</label>
+        <input type="text" id="costumer" name="costumer" maxlength="80" autocomplete="name"
+               value="{{ current_user.name if current_user and current_user.name else '' }}" required>
+      </div>
+
+      <fieldset class="section">
+        <legend>Nota</legend>
+        <div class="scale">
+          {% for value, label in levels %}
+            <label class="tile">
+              <input type="radio" name="nota" value="{{ value }}" required>
+              <span><b>{{ value }}</b>{{ label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <button type="submit" class="btn">Enviar avaliação</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

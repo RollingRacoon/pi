@@ -1,0 +1,68 @@
+{#
+  Gerenciar usuários (admin). Recebe `users` (lista de User).
+  Cada linha tem seu formulário: POST em admin_toggle_admin e volta para esta tela.
+#}
+{% extends "store_base.html" %}
+
+{% block title %}Gerenciar usuários · Nitro Raccoon{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Gerenciar usuários</h1>
+    <p class="lead">{{ users|length }} {{ 'usuário cadastrado' if users|length == 1 else 'usuários cadastrados' }}. Administradores podem aprovar itens, cadastrar produtos e gerenciar acessos.</p>
+  </div>
+  <a class="btn-outline" href="{{ url_for('pendent_admin') }}">Ver aprovações pendentes</a>
+</header>
+
+{% for message in get_flashed_messages() %}
+  <div class="error" role="alert">{{ message }}</div>
+{% endfor %}
+
+{% if users %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Usuário</th>
+          <th scope="col">Acesso</th>
+          <th scope="col">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <th scope="row">
+            {{ u.name }}{% if u.id == current_user.id %} <span class="muted">(você)</span>{% endif %}
+            <span class="sub">{{ u.email }}</span>
+          </th>
+          <td>
+            {% if u.is_admin %}
+              <span class="badge em-estoque">Administrador</span>
+            {% else %}
+              <span class="muted">Cliente</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.id != current_user.id %}
+              <form class="stock-form" method="post" action="{{ url_for('admin_toggle_admin', user_id=u.id) }}"
+                    {% if u.is_admin %}onsubmit="return confirm('Remover o acesso de administrador de {{ u.name|e }}?')"{% endif %}>
+                <input type="hidden" name="is_admin" value="{{ '0' if u.is_admin else '1' }}">
+                <button type="submit" class="btn-outline small">{{ 'Remover admin' if u.is_admin else 'Tornar admin' }}</button>
+              </form>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <section class="empty">
+    <h2>Nenhum usuário cadastrado</h2>
+    <p>Quem criar uma conta aparece aqui.</p>
+  </section>
+{% endif %}
+{% endblock %}

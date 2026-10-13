@@ -1,0 +1,70 @@
+{#
+  Catálogo com filtro por categoria e ordenação (static/js/pages.js).
+  Recebe `catalog` (lista de itens) e, opcionalmente, `only_type` (quando veio de "Mais em ...").
+#}
+{% extends "store_base.html" %}
+{% from "_macros.html" import product_card %}
+
+{% block title %}{{ 'Mais em ' ~ type_plural.get(only_type, 'Outros')|lower if only_type else 'Catálogo' }} · Nitro Raccoon{% endblock %}
+
+{% block content %}
+{% set is_admin = current_user and current_user.is_admin %}
+
+<header class="page-head">
+  <div>
+    <h1>{{ 'Mais em ' ~ type_plural.get(only_type, 'Outros')|lower if only_type else 'Catálogo' }}</h1>
+    <p class="lead">
+      {% if catalog %}
+        {{ catalog|length }} {{ 'item' if catalog|length == 1 else 'itens' }}. Filtre por categoria ou ordene por nome e preço.
+      {% else %}
+        Nada por aqui ainda.
+      {% endif %}
+    </p>
+  </div>
+  {% if is_admin %}<a class="btn-outline" href="{{ url_for('register_item') }}">Cadastrar item</a>{% endif %}
+</header>
+
+{% if only_type %}
+  <a class="back" href="{{ url_for('catalog') }}">Ver todas as categorias</a>
+{% endif %}
+
+{% if catalog %}
+  <div class="toolbar">
+    <div class="chips" role="group" aria-label="Filtrar por categoria">
+      <button type="button" class="chip" data-filter="" aria-pressed="true">Todos <span>{{ catalog|length }}</span></button>
+      {% for key, label in type_plural.items() %}
+        {% set n = catalog|selectattr('item_type', 'equalto', key)|list|length %}
+        {% if n %}
+          <button type="button" class="chip" data-filter="{{ key }}" aria-pressed="false">{{ label }} <span>{{ n }}</span></button>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <label class="sort">
+      Ordenar por
+      <select id="sort">
+        <option value="name">Nome</option>
+        <option value="price-asc">Menor preço</option>
+        <option value="price-desc">Maior preço</option>
+      </select>
+    </label>
+  </div>
+
+  <ul class="grid" id="product-grid">
+    {% for item in catalog %}
+      {{ product_card(item, url_for('list_ratings', item_id=item.id), data=true, show_status=is_admin) }}
+    {% endfor %}
+  </ul>
+
+  <section class="empty" id="grid-empty" hidden>
+    <h2>Nenhum item nesta categoria</h2>
+    <p>Escolha outra categoria ou volte para “Todos”.</p>
+  </section>
+{% else %}
+  <section class="empty">
+    <h2>Nenhum item cadastrado</h2>
+    <p>Os itens aprovados aparecem aqui.</p>
+    {% if is_admin %}<a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>{% endif %}
+  </section>
+{% endif %}
+{% endblock %}

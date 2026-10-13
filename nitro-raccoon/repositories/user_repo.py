@@ -30,7 +30,7 @@ def save(user):
     generated_id = cursor.lastrowid
     connection.close()
 
-    user.user_id = generated_id
+    user.id = generated_id
     return generated_id
 
 def seek_by_email(email):
@@ -47,7 +47,7 @@ def seek_by_email(email):
 
     user_id, name, email, hash_password, is_admin = line
     user = User(name, email, hash_password, is_admin=bool(is_admin))
-    user.user_id = user_id
+    user.id = user_id
     return user
 
 def seek_by_id(user_id):
@@ -63,5 +63,35 @@ def seek_by_id(user_id):
         return None
     user_id, name, email, hash_password, is_admin = line
     user = User(name, email, hash_password, is_admin=bool(is_admin))
-    user.user_id = user_id
+    user.id = user_id
     return user
+
+def list_all():
+    connection = connect()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT user_id, name, email, hash_password, is_admin FROM users ORDER BY name"
+        )
+        rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    users = []
+    for user_id, name, email, hash_password, is_admin in rows:
+        user = User(name, email, hash_password, is_admin=bool(is_admin))
+        user.id = user_id
+        users.append(user)
+    return users
+
+
+def set_admin(user_id, value):
+    connection = connect()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            "UPDATE users SET is_admin = %s WHERE user_id = %s", (bool(value), user_id)
+        )
+        connection.commit()
+    finally:
+        connection.close()

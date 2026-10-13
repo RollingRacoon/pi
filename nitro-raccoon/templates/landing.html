@@ -1,0 +1,57 @@
+{#
+  Página inicial pública. Recebe `items` (itens em estoque) e `logged` (bool).
+#}
+{% extends "store_base.html" %}
+{% from "_macros.html" import product_card %}
+
+{% block title %}Componentes de PC com ficha técnica e avaliações · Nitro Raccoon{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Monte o PC do seu jeito</h1>
+    <p>Processadores, placas de vídeo, memórias e periféricos com ficha técnica completa e avaliações de quem já montou.</p>
+    <div class="hero-actions">
+      {% if logged %}
+        <a class="btn" href="{{ url_for('panel') }}">Ir para o painel</a>
+        <a class="btn-ghost" href="{{ url_for('catalog') }}">Ver catálogo completo</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('sign_in') }}">Criar conta</a>
+        <a class="btn-ghost" href="{{ url_for('login') }}">Entrar</a>
+      {% endif %}
+    </div>
+  </div>
+  <img class="hero-logo" src="{{ url_for('static', filename='icons/logo.svg') }}" alt="">
+</section>
+
+{% if items %}
+  <section class="block" aria-labelledby="h-featured">
+    <h2 class="block-title" id="h-featured">Em destaque</h2>
+    <ul class="grid">
+      {% for item in items[:8] %}
+        {{ product_card(item, url_for('list_ratings', item_id=item.id) if logged else url_for('login')) }}
+      {% endfor %}
+    </ul>
+  </section>
+{% else %}
+  <section class="empty">
+    <h2>Nenhum produto disponível ainda</h2>
+    <p>Assim que um item for cadastrado e aprovado, ele aparece aqui.</p>
+    {% if current_user and current_user.is_admin %}
+      <a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>
+    {% elif not logged %}
+      <a class="btn" href="{{ url_for('sign_in') }}">Criar conta</a>
+    {% endif %}
+  </section>
+{% endif %}
+
+{% if not logged %}
+  <section class="cta-band">
+    <div>
+      <h2>Entre para ver fichas e avaliações</h2>
+      <p>Crie uma conta para consultar a ficha técnica completa, avaliar componentes e cadastrar itens.</p>
+    </div>
+    <a class="btn" href="{{ url_for('sign_in') }}">Criar conta</a>
+  </section>
+{% endif %}
+{% endblock %}

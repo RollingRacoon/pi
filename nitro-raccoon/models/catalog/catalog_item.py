@@ -1,96 +1,137 @@
+from decimal import Decimal, InvalidOperation
+
 from models.rating import Rating
 
-class CatalogItem:
-    _catalogo = []
-    STATUS_VALIDO = ('pendente','em estoque','esgotado')
 
-    def __init__(self, code, name, item_type, price, description, brand, stock):
-        self._code = code
-        self._item_type = item_type        
-        self._name = name
-        self._price = price
-        self._description = description
+class CatalogItem:
+    STATUS_VALIDO = ('pendente', 'em estoque', 'esgotado')
+    # Itens aprovados: são os que aparecem no painel e na página inicial.
+    STATUS_ATIVOS = ('em estoque', 'esgotado')
+
+    ITEM_TYPES = (
+        'adapter', 'air_cooler', 'cable', 'cpu', 'fan', 'gpu', 'keyboard',
+        'microphone', 'monitor', 'mother_board', 'mouse', 'mouse_pad',
+        'pc_case', 'psu', 'ram', 'storage', 'water_cooler',
+    )
+
+    # Mesmas colunas de especificação de items_catalog (database/db.py), na mesma ordem.
+    SPEC_FIELDS = (
+        'adapter_type', 'air_cooler_type', 'cable_type', 'keyboard_type',
+        'microphone_type', 'mouse_pad_type', 'psu_type', 'ram_type',
+        'storage_type', 'water_cooler_type', 'item_connection', 'socket',
+        'socket_compatibility', 'chipset', 'interface', 'form_factor',
+        'pc_case_format', 'storage_format', 'size', 'lighting',
+        'material', 'length', 'width', 'thickness',
+        'voltage', 'capacity', 'frequency', 'input_connector',
+        'output_connector', 'source_interface', 'target_interface', 'compatibility',
+        'version', 'transfer_speed', 'max_power', 'max_resolution',
+        'requires_power_supply', 'supported_tdp', 'fan_rotation', 'fan_number',
+        'radiator_size', 'cores', 'threads', 'base_frequency',
+        'turbo_frequency', 'cache', 'tdp', 'max_rpm',
+        'cfm', 'static_pressure', 'bearing_type', 'connector_type',
+        'noise_level', 'led_number', 'vram', 'memory_type',
+        'clock', 'consumption', 'layout', 'switch',
+        'key_count', 'polar_pattern', 'sensitivity', 'sampling_rate',
+        'resolution', 'refresh_rate', 'response', 'display_type',
+        'proportion', 'ram_slots', 'ram_capacity', 'm2_slots',
+        'pcie_slots', 'sensor', 'dpi', 'button_count',
+        'polling_rate', 'weight', 'non_slip_base', 'max_gpu_length',
+        'max_cooler_height', 'supported_radiator', 'panel_type', 'potency',
+        'certification', 'modularity', 'fan', 'connectors',
+        'modules', 'latency', 'reading_speed', 'writing_speed',
+    )
+
+    # Tipos das colunas numéricas / booleanas; todas as outras são texto.
+    INT_FIELDS = frozenset({
+        'supported_tdp', 'fan_number', 'cores', 'threads', 'tdp', 'max_rpm',
+        'led_number', 'consumption', 'key_count', 'refresh_rate', 'ram_slots',
+        'm2_slots', 'pcie_slots', 'dpi', 'button_count', 'polling_rate',
+        'potency', 'modules', 'reading_speed', 'writing_speed',
+    })
+    DECIMAL_FIELDS = frozenset({
+        'length', 'width', 'thickness', 'voltage', 'cfm', 'static_pressure',
+        'noise_level', 'response', 'weight', 'max_gpu_length', 'max_cooler_height',
+    })
+    BOOL_FIELDS = frozenset({'requires_power_supply', 'non_slip_base'})
+
+    def __init__(self, code, name, item_type, price, description, brand,
+                 stock='pendente', **specs):
+        unknown = set(specs) - set(self.SPEC_FIELDS)
+        if unknown:
+            raise ValueError(f'Campos desconhecidos: {", ".join(sorted(unknown))}')
+
+        self.id = None
+        self.code = code
+        self.name = name
+        self.item_type = item_type
+        self.price = self._decimal(price, 'preço')
+        self.description = description
         self.brand = brand
-        self.stock = stock
-        self._avaliacoes = []
-        CatalogItem._catalogo.append(self)
+        self.define_stock(stock)
+        self.ratings = []
+
+        # Só guarda o que foi preenchido; cada valor já sai convertido para o tipo da coluna.
+        self.specs = {}
+        for field, value in specs.items():
+            if isinstance(value, str):
+                value = value.strip()
+            if value is None or value == '':
+                continue
+            self.specs[field] = self._normalize(field, value)
+
+    # Permite item.cores, item.socket etc. (Jinja e código em geral).
+    def __getattr__(self, name):
+        specs = self.__dict__.get('specs')
+        if specs is not None and name in specs:
+            return specs[name]
+        raise AttributeError(name)
 
     def __str__(self):
-        return f'{self._code} | {self._name}, {self._item_type} - {self.brand} | Preço: R${self._price} | {self.stock}\n| {self._description}'
+        return (f'{self.code} | {self.name}, {self.item_type} - {self.brand} '
+                f'| Preço: R${self.price} | {self.stock}\n| {self.description}')
 
-    def define_stock(self, new_stock):
-        if new_stock not in CatalogItem.VALID_STATUS:
-            raise ValueError(f'Status inválido: {new_stock}')
-        self.stock = new_stock
+    @staticmethod
+    def _decimal(value, label):
+        try:
+            number = Decimal(str(value).strip().replace(',', '.'))
+        except InvalidOperation:
+            raise ValueError(f'O campo "{label}" precisa ser um número.') from None
+        if not number.is_finite() or number < 0:
+            raise ValueError(f'O campo "{label}" precisa ser um número maior ou igual a zero.')
+        return number
 
     @classmethod
-    def list_items(cls):
-        for item in cls.catalog:
-            print(
-                item.code.ljust(10)
-                + item.name.ljust(15)
-                + item.item_type.ljust(10)
-                + item.brand.ljust(10)
-                + item.price.ljust(10)
-                + item.stock(20)
-                + item.description.ljust(10)
-            )
+    def _normalize(cls, field, value):
+        if field in cls.BOOL_FIELDS:
+            text = str(value).strip().lower()
+            if text in ('sim', '1', 'true'):
+                return True
+            if text in ('não', 'nao', '0', 'false'):
+                return False
+            raise ValueError(f'O campo "{field}" aceita apenas Sim ou Não.')
+        if field in cls.INT_FIELDS:
+            number = cls._decimal(value, field)
+            if number != number.to_integral_value():
+                raise ValueError(f'O campo "{field}" precisa ser um número inteiro.')
+            return int(number)
+        if field in cls.DECIMAL_FIELDS:
+            return cls._decimal(value, field)
+        return str(value).strip()
+
+    def define_stock(self, new_stock):
+        if new_stock not in self.STATUS_VALIDO:
+            raise ValueError(f'Estoque inválido: {new_stock}')
+        self.stock = new_stock
+
+    @property
+    def is_active(self):
+        return self.stock in self.STATUS_ATIVOS
 
     def receive_rating(self, costumer, score):
-        rating = Rating(costumer, score)
-        self._avaliacoes.append(rating)
+        self.ratings.append(Rating(costumer, score))
 
     @property
     def rating_average(self):
-        if not self._avaliacoes:
+        if not self.ratings:
             return 0
-        soma = sum(rating._score for rating in self._avaliacoes)
-        average = soma / len(self._avaliacoes)
-        return round(average, 1)
-
-    def add_to_catalog(self, item):
-        if isinstance(item, CatalogItem):
-            self._catalogo.append(item)
-        else:
-            raise ValueError('Só é possível adicionar itens do tipo CatalogItem (ou subclasses).')
-
-    @property
-    def show_catalog(self):
-        print(f'Catálogo de {self._name}')
-        for index, item in enumerate(self._catalogo, start=1):
-            line = f'{index}. {self._name} - R${self._price}'
-            if hasattr(item, 'adapter_type'):
-                line += f' | : {item._adapter_type}'
-            if hasattr(item, 'air_cooler_type'):
-                line += f' | : {item._air_cooler_type}'
-            if hasattr(item, 'cable_type'):
-                line += f' | : {item._cable_type}'
-            if hasattr(item, 'cores'):
-                line += f' | : {item._cores}'
-            if hasattr(item, 'bearing_type'):
-                line += f' | : {item._bearing_type}'
-            if hasattr(item, 'vram'):
-                line += f' | : {item._vram}'
-            if hasattr(item, 'keyboard_type'):
-                line += f' | : {item._keyboard_type}'
-            if hasattr(item, 'microphone_type'):
-                line += f' | : {item._microphone_type}'
-            if hasattr(item, 'refresh_rate'):
-                line += f' | : {item._refresh_rate}'
-            if hasattr(item, 'm2_slots'):
-                line += f' | : {item._m2_slots}'
-            if hasattr(item, 'mouse_pad_type'):
-                line += f' | : {item._mouse_pad_type}'
-            if hasattr(item, 'dpi'):
-                line += f' | : {item._dpi}'
-            if hasattr(item, 'pc_case_format'):
-                line += f' | : {item._pc_case_format}'
-            if hasattr(item, 'psu_type'):
-                line += f' | : {item._psu_type}'
-            if hasattr(item, 'modules'):
-                line += f' | : {item._modules}'
-            if hasattr(item, 'storage_type'):
-                line += f' | : {item._storage_type}'
-            if hasattr(item, 'water_cooler_type'):
-                line += f' | : {item._water_cooler_type}'
-            print(line)
+        return round(sum(rating.score for rating in self.ratings) / len(self.ratings), 1)

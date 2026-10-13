@@ -1,0 +1,33 @@
+{#
+  Macros compartilhados.
+  pips(score): 5 marcadores preenchidos conforme a nota.
+  stock_badge(stock): selo de status ('em estoque', 'esgotado', 'pendente').
+  product_card(item, href, data=false, show_status=false): card de produto.
+    data=true adiciona data-name/price/type (usado pelo filtro de catalog.html).
+#}
+{% macro pips(score) -%}
+{% set filled = (score|float)|round|int %}
+<span class="pips" role="img" aria-label="Nota {{ '%.1f'|format(score|float)|replace('.', ',') }} de 5">
+  {%- for i in range(1, 6) %}<span class="pip{{ ' on' if i <= filled }}"></span>{% endfor -%}
+</span>
+{%- endmacro %}
+
+{% macro stock_badge(stock) -%}
+{% set labels = {'em estoque': 'Em estoque', 'esgotado': 'Esgotado', 'pendente': 'Pendente'} %}
+<span class="badge {{ (stock or '')|replace(' ', '-') }}">{{ labels.get(stock, stock or '—') }}</span>
+{%- endmacro %}
+
+{% macro product_card(item, href, data=false, show_status=false) -%}
+<li class="product"{% if data %} data-name="{{ item.name }}" data-price="{{ item.price|float }}" data-type="{{ item.item_type }}"{% endif %}>
+  <a class="thumb" href="{{ href }}" tabindex="-1" aria-hidden="true">
+    {% if item.image %}<img src="{{ url_for('static', filename='uploads/items/' ~ item.image) }}" alt="" loading="lazy">{% else %}<svg class="chip-icon"><use href="#chip"/></svg>{% endif %}
+  </a>
+  <div class="info">
+    <span class="brand-tag">{{ item.brand }}</span>
+    <h3><a href="{{ href }}">{{ item.name }}</a></h3>
+    {% if show_status %}{{ stock_badge(item.stock) }}{% endif %}
+    <p class="price">{{ item.price|brl }}</p>
+    <a class="btn-outline" href="{{ href }}">Ver detalhes</a>
+  </div>
+</li>
+{%- endmacro %}

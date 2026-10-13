@@ -1,6 +1,6 @@
 {#
   Painel / catálogo principal.
-  Espera `items` (lista de CatalogItem ativos). Usa `current_user` (context processor).
+  Espera `items` (lista de CatalogItem ativos). Usa `user` (context processor).
   Atributos usados de cada item: id, name, brand, price, item_type.
 #}
 {% macro brl(v) -%}
@@ -46,7 +46,7 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0B0713">
-  <title>Catálogo PC</title>
+  <title>Nitro Raccoon</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/logo.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +69,7 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
   <div class="topbar-main">
     <a class="logo-link" href="{{ url_for('panel') }}">
       <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="44" height="44">
-      <span>Catálogo PC</span>
+      <span>Nitro Raccoon</span>
     </a>
 
     <form class="search" role="search" onsubmit="return false">
@@ -78,11 +78,11 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
     </form>
 
     <nav class="account" aria-label="Conta">
-      {% if current_user and current_user.is_admin %}
+      {% if user and user.is_admin %}
         <a href="{{ url_for('pendent_admin') }}">Administração</a>
+        <a href="{{ url_for('register_item') }}">Cadastrar item</a>
       {% endif %}
-      <a href="{{ url_for('register_item') }}">Cadastrar item</a>
-      <span class="hello">Olá, {{ current_user.name if current_user and current_user.name else 'visitante' }}</span>
+      <span class="hello">Olá, {{ user.name if user and user.name else 'visitante' }}</span>
       <a class="logout" href="{{ url_for('logout') }}">Sair</a>
     </nav>
   </div>
@@ -110,7 +110,7 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
     <section class="empty">
       <h2>Nenhum produto disponível ainda</h2>
       <p>Assim que um item for cadastrado e aprovado, ele aparece aqui.</p>
-      <a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>
+      {% if user and user.is_admin %}<a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>{% endif %}
     </section>
   {% endif %}
 
@@ -128,7 +128,7 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
       {% for item in s['items'] %}
       <li class="product{{ ' extra' if loop.index > 5 }}" data-search="{{ item.name }} {{ item.brand }} {{ s.label }}">
         <a class="thumb" href="{{ url_for('list_ratings', item_id=item.id) }}" tabindex="-1" aria-hidden="true">
-          <svg class="chip-icon"><use href="#chip"/></svg>
+          {% if item.image %}<img src="{{ url_for('static', filename='uploads/items/' ~ item.image) }}" alt="" loading="lazy">{% else %}<svg class="chip-icon"><use href="#chip"/></svg>{% endif %}
         </a>
         <div class="info">
           <span class="brand-tag">{{ item.brand }}</span>
@@ -150,7 +150,7 @@ R$ {{ ('{:,.2f}'.format(v|float)).replace(',', '#').replace('.', ',').replace('#
 
 <footer class="footer">
   <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="28" height="28">
-  <span>Catálogo PC</span>
+  <span>Nitro Raccoon</span>
 </footer>
 
 <script src="{{ url_for('static', filename='js/panel.js') }}"></script>

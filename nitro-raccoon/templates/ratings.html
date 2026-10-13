@@ -1,0 +1,83 @@
+{#
+  Detalhe do item. Recebe `item` (CatalogItem com `specs` e `ratings`).
+#}
+{% extends "store_base.html" %}
+{% from "_macros.html" import pips, stock_badge %}
+
+{% block title %}{{ item.name }} · Nitro Raccoon{% endblock %}
+
+{% block content %}
+{% set rows = spec_rows(item) %}
+{% set total = item.ratings|length %}
+{% set avg = (item.ratings|sum(attribute='score') / total) if total else 0 %}
+
+<a class="back" href="{{ url_for('panel') }}">Voltar ao catálogo</a>
+
+<article class="detail">
+  <div class="frame detail-media">
+    <div class="frame-in">
+      {% if item.image %}<img src="{{ url_for('static', filename='uploads/items/' ~ item.image) }}" alt="{{ item.name }}">{% else %}<svg class="chip-icon" aria-hidden="true"><use href="#chip"/></svg>{% endif %}
+    </div>
+  </div>
+
+  <div class="detail-info">
+    <span class="brand-tag">{{ item.brand }}</span>
+    <h1>{{ item.name }}</h1>
+    <p class="type-line">
+      <span>{{ type_singular.get(item.item_type, 'Outros') }}</span>
+      {{ stock_badge(item.stock) }}
+    </p>
+    <p class="price big">{{ item.price|brl }}</p>
+    {% if item.description %}<p class="desc">{{ item.description }}</p>{% endif %}
+    <p class="code">Código do produto: {{ item.code }}</p>
+
+    <div class="detail-actions">
+      <a class="btn" href="{{ url_for('rate_item', item_id=item.id) }}">Avaliar este item</a>
+      <a class="btn-outline" href="{{ url_for('list_catalog', item_id=item.id) }}">Mais em {{ type_plural.get(item.item_type, 'Outros')|lower }}</a>
+    </div>
+  </div>
+</article>
+
+<section class="block" aria-labelledby="h-sheet">
+  <h2 class="block-title" id="h-sheet">Ficha técnica</h2>
+  {% if rows %}
+    <dl class="sheet">
+      {% for label, text in rows %}
+        <div><dt>{{ label }}</dt><dd>{{ text }}</dd></div>
+      {% endfor %}
+    </dl>
+  {% else %}
+    <p class="muted">Este item ainda não tem especificações cadastradas.</p>
+  {% endif %}
+</section>
+
+<section class="block" id="avaliacoes" aria-labelledby="h-reviews">
+  <h2 class="block-title" id="h-reviews">Avaliações</h2>
+
+  {% if total %}
+    <div class="summary">
+      <div class="score"><strong>{{ '%.1f'|format(avg)|replace('.', ',') }}</strong><span>de 5</span></div>
+      <div>
+        {{ pips(avg) }}
+        <p class="muted">{{ total }} {{ 'avaliação' if total == 1 else 'avaliações' }}</p>
+      </div>
+    </div>
+
+    <ul class="reviews">
+      {% for r in item.ratings %}
+        <li>
+          <span class="who">{{ r.name }}</span>
+          {{ pips(r.score) }}
+          <span class="n">{{ '%.1f'|format(r.score)|replace('.', ',') }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <section class="empty">
+      <h2>Ainda sem avaliações</h2>
+      <p>Seja a primeira pessoa a dar uma nota para este item.</p>
+      <a class="btn" href="{{ url_for('rate_item', item_id=item.id) }}">Avaliar este item</a>
+    </section>
+  {% endif %}
+</section>
+{% endblock %}

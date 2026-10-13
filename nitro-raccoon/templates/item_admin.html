@@ -1,0 +1,87 @@
+{#
+  Todos os itens. Recebe `items` e `stock_valid` (tupla de status válidos).
+  Cada linha tem seu formulário: POST em admin_update_stock e volta para esta tela.
+#}
+{% extends "store_base.html" %}
+{% from "_macros.html" import stock_badge %}
+
+{% block title %}Gerenciar itens · Nitro Raccoon{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Gerenciar itens</h1>
+    <p class="lead">{{ items|length }} {{ 'item cadastrado' if items|length == 1 else 'itens cadastrados' }}. Altere o status para publicar, marcar como esgotado ou voltar para pendente.</p>
+  </div>
+  <a class="btn-outline" href="{{ url_for('user_admin') }}">Gerenciar usuários</a>
+  <a class="btn-outline" href="{{ url_for('pendent_admin') }}">Ver aprovações pendentes</a>
+</header>
+
+{% for message in get_flashed_messages() %}
+  <div class="error" role="alert">{{ message }}</div>
+{% endfor %}
+
+{% if items %}
+  <div class="toolbar">
+    <label class="search-box">
+      <span class="sr-only">Buscar itens</span>
+      <input type="search" id="admin-q" placeholder="Buscar por nome, marca, código ou categoria" autocomplete="off">
+    </label>
+    <p class="muted" id="admin-count" aria-live="polite">{{ items|length }} {{ 'item' if items|length == 1 else 'itens' }}</p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Item</th>
+          <th scope="col">Categoria</th>
+          <th scope="col" class="num">Preço</th>
+          <th scope="col">Status</th>
+          <th scope="col">Alterar status</th>
+          <th scope="col">Foto</th>
+        </tr>
+      </thead>
+      <tbody id="admin-rows">
+        {% for item in items %}
+        <tr data-search="{{ item.name }} {{ item.brand }} {{ item.code }} {{ type_singular.get(item.item_type, 'Outros') }}">
+          <th scope="row">
+            <a href="{{ url_for('list_ratings', item_id=item.id) }}">{{ item.name }}</a>
+            <span class="sub">{{ item.brand }}, código {{ item.code }}</span>
+          </th>
+          <td>{{ type_singular.get(item.item_type, 'Outros') }}</td>
+          <td class="num">{{ item.price|brl }}</td>
+          <td>{{ stock_badge(item.stock) }}</td>
+          <td>
+            <form class="stock-form" method="post" action="{{ url_for('admin_update_stock', item_id=item.id) }}">
+              <input type="hidden" name="origin" value="item_admin">
+              <label class="sr-only" for="stock-{{ item.id }}">Status de {{ item.name }}</label>
+              <select id="stock-{{ item.id }}" name="stock">
+                {% for s in stock_valid %}
+                  <option value="{{ s }}"{% if s == item.stock %} selected{% endif %}>{{ stock_labels.get(s, s) }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-outline small">Salvar</button>
+            </form>
+          </td>
+          <td>
+            <form class="stock-form" method="post" action="{{ url_for('admin_update_image', item_id=item.id) }}" enctype="multipart/form-data">
+              <label class="sr-only" for="img-{{ item.id }}">Foto de {{ item.name }}</label>
+              <input type="file" id="img-{{ item.id }}" name="image" accept="image/jpeg,image/png,image/webp" required>
+              <button type="submit" class="btn-outline small">{{ 'Trocar' if item.image else 'Enviar' }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted note" id="admin-empty" hidden>Nenhum item encontrado para essa busca.</p>
+{% else %}
+  <section class="empty">
+    <h2>Nenhum item cadastrado</h2>
+    <p>Os itens cadastrados em “Cadastrar item” aparecem aqui.</p>
+    <a class="btn" href="{{ url_for('register_item') }}">Cadastrar item</a>
+  </section>
+{% endif %}
+{% endblock %}

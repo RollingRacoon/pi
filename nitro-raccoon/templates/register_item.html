@@ -6,6 +6,8 @@
   nunca chegam duplicados ao Flask.
   Campos: (name, rótulo, exemplo[, tipo]) — tipo 'n' = número, 'b' = Sim/Não.
 #}
+{% set form = form if form is defined else {} %}
+
 {% set types = [
   ('cpu', 'Processador'), ('mother_board', 'Placa-mãe'), ('gpu', 'Placa de vídeo'),
   ('ram', 'Memória RAM'), ('storage', 'Armazenamento'), ('psu', 'Fonte'),
@@ -101,7 +103,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0B0713">
-  <title>Cadastrar item · Catálogo PC</title>
+  <title>Cadastrar item · Nitro Raccoon</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/logo.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,7 +117,7 @@
   <div class="topbar-main">
     <a class="logo-link" href="{{ url_for('panel') }}">
       <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="44" height="44">
-      <span>Catálogo PC</span>
+      <span>Nitro Raccoon</span>
     </a>
 
     <nav class="account" aria-label="Conta">
@@ -153,15 +155,18 @@
       <h1>Cadastrar item</h1>
       <p class="lead">Preencha a ficha do componente. Ele entra no catálogo depois de aprovado por um administrador.</p>
 
-      <form method="post" action="{{ url_for('register_item') }}">
-        <input type="hidden" name="stock" value="pendente">
+      {% if error %}
+        <div class="error" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('register_item') }}" enctype="multipart/form-data">
 
         <fieldset class="section">
           <legend>Categoria</legend>
           <div class="types">
             {% for key, label in types %}
             <label class="type">
-              <input type="radio" name="item_type" value="{{ key }}" required>
+              <input type="radio" name="item_type" value="{{ key }}" {{ 'checked' if form.get('item_type') == key }} required>
               <span>{{ label }}</span>
             </label>
             {% endfor %}
@@ -173,26 +178,30 @@
           <div class="fields">
             <div class="field s4">
               <label for="name">Nome</label>
-              <input type="text" id="name" name="name" placeholder="Ryzen 7 7800X3D" required>
+              <input type="text" id="name" name="name" maxlength="255" value="{{ form.get('name', '') }}" placeholder="Ryzen 7 7800X3D" required>
             </div>
             <div class="field s2">
               <label for="price">Preço</label>
               <div class="money">
                 <span aria-hidden="true">R$</span>
-                <input type="number" id="price" name="price" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required>
+                <input type="number" id="price" name="price" min="0" step="0.01" inputmode="decimal" value="{{ form.get('price', '') }}" placeholder="0,00" required>
               </div>
             </div>
             <div class="field s3">
               <label for="brand">Marca</label>
-              <input type="text" id="brand" name="brand" placeholder="AMD" required>
+              <input type="text" id="brand" name="brand" maxlength="50" value="{{ form.get('brand', '') }}" placeholder="AMD" required>
             </div>
             <div class="field s3">
               <label for="code">Código do produto</label>
-              <input type="text" id="code" name="code" placeholder="100-100000910WOF" required>
+              <input type="text" id="code" name="code" maxlength="20" value="{{ form.get('code', '') }}" placeholder="100-100000910WOF" required>
             </div>
             <div class="field s6">
               <label for="description">Descrição</label>
-              <textarea id="description" name="description" rows="4" placeholder="O que diferencia este item, para que ele serve e o que acompanha."></textarea>
+              <textarea id="description" name="description" rows="4" placeholder="O que diferencia este item, para que ele serve e o que acompanha.">{{ form.get('description', '') }}</textarea>
+            </div>
+            <div class="field s6">
+              <label for="image">Foto do item (opcional, JPG, PNG ou WebP, até 5 MB)</label>
+              <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp">
             </div>
           </div>
         </fieldset>
@@ -210,13 +219,13 @@
                 {% if kind == 'b' %}
                   <select id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}">
                     <option value="">Não informado</option>
-                    <option>Sim</option>
-                    <option>Não</option>
+                    <option {{ 'selected' if form.get(f[0]) == 'Sim' }}>Sim</option>
+                    <option {{ 'selected' if form.get(f[0]) == 'Não' }}>Não</option>
                   </select>
                 {% elif kind == 'n' %}
-                  <input type="number" min="0" step="any" inputmode="decimal" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}">
+                  <input type="number" min="0" step="any" inputmode="decimal" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}" value="{{ form.get(f[0], '') }}">
                 {% else %}
-                  <input type="text" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}">
+                  <input type="text" id="{{ key }}-{{ f[0] }}" name="{{ f[0] }}" placeholder="{{ f[2] }}" value="{{ form.get(f[0], '') }}">
                 {% endif %}
               </div>
             {% endfor %}
@@ -237,7 +246,7 @@
 
 <footer class="footer">
   <img src="{{ url_for('static', filename='icons/logo.svg') }}" alt="" width="28" height="28">
-  <span>Catálogo PC</span>
+  <span>Nitro Raccoon</span>
 </footer>
 
 <script src="{{ url_for('static', filename='js/register.js') }}"></script>

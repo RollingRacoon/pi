@@ -1,0 +1,67 @@
+{#
+  Galeria de fotos de um item (admin). Recebe `item` (com `images`) e `max_images`.
+#}
+{% extends "store_base.html" %}
+
+{% block title %}Fotos de {{ item.name }} · Nitro Raccoon{% endblock %}
+
+{% block content %}
+{% set total = item.images|length %}
+
+<a class="back" href="{{ url_for('item_admin') }}">Voltar aos itens</a>
+
+<header class="page-head">
+  <div>
+    <h1>Fotos de {{ item.name }}</h1>
+    <p class="lead">{{ total }} de {{ max_images }} fotos. A primeira é a capa e aparece nos cards do catálogo.</p>
+  </div>
+  <a class="btn-outline" href="{{ url_for('list_ratings', item_id=item.id) }}">Ver página do item</a>
+</header>
+
+{% for message in get_flashed_messages() %}
+  <div class="error" role="alert">{{ message }}</div>
+{% endfor %}
+
+{% if item.images %}
+  <ul class="grid">
+    {% for name in item.images %}
+      <li class="product">
+        <div class="thumb">
+          <img src="{{ url_for('static', filename='uploads/items/' ~ name) }}" alt="Foto {{ loop.index }} de {{ item.name }}" loading="lazy">
+        </div>
+        <div class="info">
+          {% if loop.first %}
+            <span class="badge em-estoque">Capa</span>
+          {% else %}
+            <form method="post" action="{{ url_for('admin_cover_image', item_id=item.id) }}">
+              <input type="hidden" name="filename" value="{{ name }}">
+              <button type="submit" class="btn-outline small">Tornar capa</button>
+            </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin_delete_image', item_id=item.id) }}" onsubmit="return confirm('Remover esta foto?')">
+            <input type="hidden" name="filename" value="{{ name }}">
+            <button type="submit" class="btn-outline small">Remover</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <section class="empty">
+    <h2>Este item ainda não tem fotos</h2>
+    <p>Envie até {{ max_images }} fotos em JPG, PNG ou WebP.</p>
+  </section>
+{% endif %}
+
+{% if total < max_images %}
+  <section class="block" aria-labelledby="h-add">
+    <h2 class="block-title" id="h-add">Adicionar fotos</h2>
+    <form class="upload-form" method="post" action="{{ url_for('admin_add_images', item_id=item.id) }}" enctype="multipart/form-data">
+      <label class="sr-only" for="images">Fotos</label>
+      <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple required>
+      <button type="submit" class="btn">Enviar fotos</button>
+    </form>
+    <p class="muted note" style="text-align:left">Cabem mais {{ max_images - total }}. Até 5 MB por foto.</p>
+  </section>
+{% endif %}
+{% endblock %}

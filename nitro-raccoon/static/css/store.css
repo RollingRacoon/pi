@@ -231,6 +231,8 @@ main { max-width: 80rem; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
     var(--board);
   border-bottom: 1px solid var(--edge);
 }
+.thumb { position: relative; overflow: hidden; }
+.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .chip-icon { width: 44%; height: auto; aspect-ratio: 1; color: var(--violet-soft); opacity: 0.7; }
 
 .info { display: flex; flex-direction: column; flex: 1; gap: 0.25rem; padding: 0.875rem 1rem 1rem; }

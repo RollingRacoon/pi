@@ -1,13 +1,16 @@
+import os
+
 import mysql.connector
 
+
 def connect():
-    connection = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="nitro-raccoon"
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", "root"),
+        database=os.getenv("DB_NAME", "nitro-raccoon"),
     )
-    return connection
+
 
 def create_catalog():
     connection = connect()
@@ -21,7 +24,7 @@ def create_catalog():
     item_type VARCHAR(20) NOT NULL,
     description TEXT NOT NULL,
     brand VARCHAR(50) NOT NULL,
-    stock INT NOT NULL,
+    stock VARCHAR(20) NOT NULL DEFAULT 'pendente',
     adapter_type VARCHAR(20),
     air_cooler_type VARCHAR(20),
     cable_type VARCHAR(20),
@@ -113,67 +116,52 @@ def create_catalog():
     modules INT,
     latency VARCHAR(20),
     reading_speed INT,
-    writing_speed INT
+    writing_speed INT,
+    image VARCHAR(255)
     )
     """)
+
+    # Bancos criados com a versão antiga têm `stock INT`, mas o app usa texto
+    # ('pendente', 'em estoque', 'esgotado'). Converte uma única vez.
+    cursor.execute(
+        "SELECT DATA_TYPE FROM information_schema.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items_catalog' "
+        "AND COLUMN_NAME = 'stock'"
+    )
+    row = cursor.fetchone()
+    data_type = row[0] if row else 'varchar'
+    if isinstance(data_type, (bytes, bytearray)):
+        data_type = data_type.decode()
+    if str(data_type).lower() != 'varchar':
+        cursor.execute(
+            "ALTER TABLE items_catalog "
+            "MODIFY stock VARCHAR(20) NOT NULL DEFAULT 'pendente'"
+        )
+
+    # Bancos criados antes das fotos não têm a coluna `image`.
+    cursor.execute(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items_catalog' "
+        "AND COLUMN_NAME = 'image'"
+    )
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("ALTER TABLE items_catalog ADD COLUMN image VARCHAR(255) NULL")
+
     connection.commit()
     connection.close()
+
 
 def create_ratings():
     connection = connect()
     cursor = connection.cursor()
-    create_ratings = """
-    CREATE TABLE IF NOT EXISTS items_catalog(
-        user_id INT AUTO_INCREMENT PRIMARY KEY,
-        code VARCHAR(20) NOT NULL UNIQUE,
-        name VARCHAR(100) NOT NULL,
-        rating_score DECIMAL(2, 1),
-        FOREIGN KEY (items_id) REFERENCES items_catalog(items_id)
-    )
-    """
-    cursor.execute(create_ratings)
-    connection.commit()
-    connection.close()
-
-
-def create_item(items_id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed):
-    connection = connect()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-            INSERT INTO items_catalog(items_id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (items_id, code, name, price, item_type, description, brand, stock, adapter_type, air_cooler_type, cable_type, keyboard_type, microphone_type, mouse_pad_type, psu_type, ram_type, storage_type, water_cooler_type, item_connection, socket, socket_compatibility, chipset, interface, form_factor, pc_case_format, storage_format, size, lighting, material, length, width, thickness, voltage, capacity, frequency, input_connector, output_connector, source_interface, target_interface, compatibility, version, transfer_speed, max_power, max_resolution, requires_power_supply, supported_tdp, fan_rotation, fan_number, radiator_size, cores, threads, base_frequency, turbo_frequency, cache, tdp, max_rpm, cfm, static_pressure, bearing_type, connector_type, noise_level, led_number, vram, memory_type, clock, consumption, layout, switch, key_count, polar_pattern, sensitivity, sampling_rate, resolution, refresh_rate, response, display_type, proportion, ram_slots, ram_capacity, m2_slots, pcie_slots, sensor, dpi, button_count, polling_rate, weight, non_slip_base, max_gpu_length, max_cooler_height, supported_radiator, panel_type, potency, certification, modularity, fan, connectors, modules, latency, reading_speed, writing_speed)
-    )
-    connection.commit()
-    connection.close()
-
-def list_items():
-    connection = connect()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-            SELECT * FROM items_catalog
-        """
-    )
-    items_catalog = cursor.fetchall()
-    for item in items_catalog:
-        print(item)
-    connection.commit()
-    connection.close()
-
-
-
-def list_ratings():
-    connection = connect()
-    cursor = connection.cursor()
     cursor.execute("""
-    SELECT ratings.user_id, items_catalog.name, ratings.name, ratings.rating_score
-    FROM ratings
-    JOIN items_catalog ON ratings.user_id = items_catalog.items_id
+    CREATE TABLE IF NOT EXISTS ratings (
+        rating_id INT AUTO_INCREMENT PRIMARY KEY,
+        items_id INT NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        rating_score DECIMAL(2, 1) NOT NULL,
+        FOREIGN KEY (items_id) REFERENCES items_catalog(items_id) ON DELETE CASCADE
+    )
     """)
-    ratings = cursor.fetchall()
-    for rating in ratings:
-        print(rating)
     connection.commit()
     connection.close()
