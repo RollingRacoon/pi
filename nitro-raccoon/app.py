@@ -51,14 +51,8 @@ init_db()
 
 # Padrão de e-mail aceito no cadastro: nome@dominio.tld.
 # nome@dominio.tld: sem espaços, sem pontos duplicados, TLD só com letras (2+).
-_EMAIL_RE = re.compile(
-    r'^[A-Za-z0-9]+([._%+-][A-Za-z0-9]+)*'      # parte local
-    r'@'
-    r'[A-Za-z0-9]+(-[A-Za-z0-9]+)*'             # primeiro rótulo do domínio
-    r'(\.[A-Za-z0-9]+(-[A-Za-z0-9]+)*)*'        # subdomínios opcionais
-    r'\.[A-Za-z]{2,}$'                          # .com, .com.br, .org...
-)
-
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+ 
 
 def is_valid_email(email):
     # 150 = tamanho da coluna users.email
