@@ -1,8 +1,11 @@
+# Repositório de usuários: cadastro, busca e controle de administradores.
 from database.db import connect
 from models.user import User
 
 
 def create_users():
+    # Cria a tabela de usuários. O e-mail é UNIQUE (não repete) e
+    # is_admin começa como FALSE: todo mundo se cadastra como cliente.
     connection = connect()
     cursor = connection.cursor()
     cursor.execute("""
@@ -18,6 +21,8 @@ def create_users():
     connection.close()
 
 def save(user):
+    # Insere o usuário. A senha chega já como hash (nunca em texto puro) e
+    # is_admin não é enviado, então vale o padrão FALSE.
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
@@ -34,6 +39,7 @@ def save(user):
     return generated_id
 
 def seek_by_email(email):
+    # Busca por e-mail (usado no login e para checar cadastro duplicado).
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
@@ -45,12 +51,14 @@ def seek_by_email(email):
     if line is None:
         return None
 
+    # Transforma a linha do banco em um objeto User.
     user_id, name, email, hash_password, is_admin = line
     user = User(name, email, hash_password, is_admin=bool(is_admin))
     user.id = user_id
     return user
 
 def seek_by_id(user_id):
+    # Busca por id (usado para saber quem está logado a partir da sessão).
     connection = connect()
     cursor = connection.cursor()
     cursor.execute(
@@ -67,6 +75,7 @@ def seek_by_id(user_id):
     return user
 
 def list_all():
+    # Todos os usuários em ordem alfabética (tela de gerenciar usuários).
     connection = connect()
     try:
         cursor = connection.cursor()
@@ -86,6 +95,7 @@ def list_all():
 
 
 def set_admin(user_id, value):
+    # Promove (True) ou rebaixa (False) um usuário.
     connection = connect()
     try:
         cursor = connection.cursor()

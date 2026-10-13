@@ -1,5 +1,7 @@
+# Funções e tabelas de apoio usadas pelos templates HTML (Jinja).
 import math
 
+# Nome de cada categoria no singular, em português (para exibir na tela).
 TYPE_SINGULAR = {
     'cpu': 'Processador', 'mother_board': 'Placa-mãe', 'gpu': 'Placa de vídeo',
     'ram': 'Memória RAM', 'storage': 'Armazenamento', 'psu': 'Fonte',
@@ -9,6 +11,7 @@ TYPE_SINGULAR = {
     'adapter': 'Adaptador', 'cable': 'Cabo',
 }
 
+# O mesmo, no plural (títulos de seção).
 TYPE_PLURAL = {
     'cpu': 'Processadores', 'mother_board': 'Placas-mãe', 'gpu': 'Placas de vídeo',
     'ram': 'Memórias RAM', 'storage': 'Armazenamento', 'psu': 'Fontes',
@@ -18,8 +21,10 @@ TYPE_PLURAL = {
     'adapter': 'Adaptadores', 'cable': 'Cabos',
 }
 
+# Texto amigável para cada status de estoque.
 STOCK_LABELS = {'em estoque': 'Em estoque', 'esgotado': 'Esgotado', 'pendente': 'Pendente'}
 
+# Ficha técnica de cada categoria: quais campos mostrar, em que ordem e com qual unidade.
 # (campo, rótulo, unidade)
 SPEC_FIELDS = {
     'cpu': [('socket', 'Soquete', ''), ('cores', 'Núcleos', ''), ('threads', 'Threads', ''),
@@ -85,10 +90,12 @@ SPEC_FIELDS = {
 
 
 def brl(value):
+    # Formata um número como moeda brasileira: 1234.5 -> "R$ 1.234,50".
     try:
         v = float(value)
     except (TypeError, ValueError):
-        v = 0.0
+        v = 0.0  # valor inválido vira R$ 0,00 em vez de quebrar a página
+    # Troca os separadores do padrão americano (1,234.50) pelo brasileiro.
     return 'R$ ' + f'{v:,.2f}'.replace(',', '#').replace('.', ',').replace('#', '.')
 
 
@@ -104,22 +111,25 @@ def _number(text):
 
 
 def _get(item, field):
+    # Pega o valor de uma especificação, olhando primeiro o dicionário `specs`.
     specs = getattr(item, 'specs', None)
     if isinstance(specs, dict) and field in specs:
         return specs[field]
     return getattr(item, field, None)
 
 
+# Campos Sim/Não, exibidos como texto em vez de 1/0.
 BOOL_FIELDS = {'non_slip_base', 'requires_power_supply'}
 
 
 def spec_rows(item):
     """Lista de (rótulo, texto) só com os campos preenchidos da ficha técnica."""
     rows = []
+    # Percorre os campos da categoria do item, na ordem definida em SPEC_FIELDS.
     for field, label, unit in SPEC_FIELDS.get(getattr(item, 'item_type', None), []):
         value = _get(item, field)
         if value is None or str(value).strip() == '':
-            continue
+            continue  # campo não preenchido não aparece
         text = str(value).strip()
         if field in BOOL_FIELDS:
             text = 'Sim' if text.lower() in ('1', 'true', 'sim') else 'Não'
@@ -130,6 +140,8 @@ def spec_rows(item):
 
 
 def init_app(app):
+    # Registra tudo no Flask: o filtro `brl` ({{ preco|brl }}) e as variáveis
+    # globais que os templates podem usar sem receber da rota.
     app.add_template_filter(brl, 'brl')
     app.jinja_env.globals.update(
         spec_rows=spec_rows,

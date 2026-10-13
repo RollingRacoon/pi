@@ -1,13 +1,16 @@
+# Arquivo principal: cria o app Flask e define todas as rotas (páginas) do site.
 import os
 import re
 from functools import wraps
 from pathlib import Path
 
+# Carrega o .env (SECRET_KEY, dados do banco) antes de qualquer outra coisa.
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 import mysql.connector
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+# Senhas nunca são guardadas em texto puro: só o hash.
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import create_catalog, create_ratings
@@ -21,6 +24,7 @@ import image_upload
 import template_helpers
 
 app = Flask(__name__)
+# Chave que assina a sessão (cookie de login); sem ela o app nem inicia.
 app.secret_key = os.getenv("SECRET_KEY")
 
 if not app.secret_key:
@@ -45,6 +49,7 @@ def init_db():
 
 init_db()
 
+# Padrão de e-mail aceito no cadastro: nome@dominio.tld.
 # nome@dominio.tld: sem espaços, sem pontos duplicados, TLD só com letras (2+).
 _EMAIL_RE = re.compile(
     r'^[A-Za-z0-9]+([._%+-][A-Za-z0-9]+)*'      # parte local
@@ -62,6 +67,8 @@ def is_valid_email(email):
 
 @app.context_processor
 def inject_user():
+    # Roda em toda renderização de template: deixa o usuário logado
+    # disponível como `current_user` em qualquer página.
     user = None
     if 'user_id' in session:
         user = user_repo.seek_by_id(session['user_id'])
@@ -70,6 +77,7 @@ def inject_user():
 
 
 def login_required(function):
+    # Decorador: só deixa entrar quem está logado; senão manda para /login.
     @wraps(function)
     def verify(*args, **kwargs):
         if session.get('user_id') is None:
@@ -79,11 +87,13 @@ def login_required(function):
 
 
 def admin_required(function):
+    # Decorador: exige login E perfil de administrador.
     @wraps(function)
     def verify(*args, **kwargs):
         if session.get('user_id') is None:
             return redirect(url_for('login'))
 
+        # Confere no banco a cada requisição, então rebaixar um admin vale na hora.
         user = user_repo.seek_by_id(session['user_id'])
         if user is None or not user.is_admin:
             return redirect(url_for('panel'))
@@ -94,6 +104,7 @@ def admin_required(function):
 
 @app.route('/')
 def index():
+    # Página inicial pública: mostra só itens aprovados.
     active_items = catalog_repo.list_active()
     logged = session.get('user_id') is not None
     return render_template('landing.html', items=active_items, logged=logged)
@@ -102,6 +113,7 @@ def index():
 @app.route('/register-item', methods=['GET', 'POST'])
 @admin_required
 def register_item():
+    # GET: mostra o formulário de cadastro de item (só admin).
     if request.method == 'GET':
         return render_template(
             'register_item.html',
@@ -109,6 +121,7 @@ def register_item():
             form={},
         )
 
+    # POST: recebe o formulário.
     form = request.form
 
     image = None
@@ -118,10 +131,12 @@ def register_item():
         image_upload.delete_item_image(image, UPLOAD_DIR)
         return render_template('register_item.html', sent=False, form=form, error=message)
 
+    # A categoria precisa ser uma das conhecidas.
     item_type = form.get('item_type', '')
     if item_type not in CatalogItem.ITEM_TYPES:
         return fail('Escolha uma categoria.')
 
+    # Salva a foto (opcional) já validando tamanho e formato.
     try:
         image = image_upload.save_item_image(request.files.get('image'), UPLOAD_DIR)
     except ValueError as error:
@@ -139,6 +154,7 @@ def register_item():
             continue
         specs[key] = (1 if value == 'Sim' else 0) if key in bool_fields else value
 
+    # Cria o item (a classe valida os dados) e grava no banco.
     try:
         item = CatalogItem(
             form['code'].strip(),
@@ -155,6 +171,7 @@ def register_item():
     except ValueError as error:
         return fail(str(error))
     except mysql.connector.errors.IntegrityError:
+        # Código do produto é UNIQUE no banco.
         return fail('Já existe um item cadastrado com este código.')
     except mysql.connector.errors.DataError:
         return fail('Algum campo tem um valor grande demais ou em formato inválido. '
@@ -166,12 +183,15 @@ def register_item():
 
 @app.route('/sign_in', methods=['GET', 'POST'])
 def sign_in():
+    # Cadastro de novo usuário.
     if request.method == 'POST':
         name = request.form['name'].strip()
+        # E-mail normalizado (minúsculas, sem espaços) para evitar duplicados.
         email = request.form['email'].strip().lower()
         password = request.form['senha']
 
         def fail(message):
+            # Reexibe o formulário mantendo nome e e-mail digitados.
             return render_template('sign_in.html', error=message, name=name, email=email)
 
         if not name:
@@ -184,6 +204,7 @@ def sign_in():
         if user_repo.seek_by_email(email) is not None:
             return fail('Este e-mail já está cadastrado.')
 
+        # Guarda só o hash da senha.
         user = User(name, email, generate_password_hash(password))
         user_repo.save(user)
         return redirect(url_for('login'))
@@ -197,11 +218,13 @@ def login():
         email = request.form['email']
         password = request.form['password']
 
+        # Compara a senha digitada com o hash guardado.
         user = user_repo.seek_by_email(email)
         if user and check_password_hash(user._hash_password, password):
-            session['user_id'] = user.id
+            session['user_id'] = user.id  # "logou": guarda o id na sessão
             return redirect(url_for('panel'))
 
+        # Mesma mensagem para e-mail ou senha errados (não revela qual foi).
         return render_template('login.html', error='E-mail ou senha inválidos.')
 
     return render_template('login.html')
@@ -209,6 +232,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    # Encerra a sessão.
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
@@ -216,6 +240,7 @@ def logout():
 @app.route('/panel')
 @login_required
 def panel():
+    # Painel do usuário logado: vitrine com os itens aprovados por categoria.
     return render_template('panel.html', items=catalog_repo.list_active())
 
 
@@ -229,12 +254,14 @@ def catalog():
 @app.route('/catalog/<int:item_id>/rate', methods=['GET', 'POST'])
 @login_required
 def rate_item(item_id):
+    # Formulário para avaliar um item.
     item = catalog_repo.seek_by_items_id(item_id)
     if item is None:
         return redirect(url_for('catalog'))
 
     if request.method == 'POST':
         try:
+            # A classe Rating valida o nome e a nota (0 a 5).
             rating = Rating(request.form['costumer'], request.form['nota'])
         except ValueError as error:
             return render_template('rate.html', item=item, error=str(error))
@@ -248,6 +275,7 @@ def rate_item(item_id):
 @app.route('/item/<int:item_id>/ratings')
 @login_required
 def list_ratings(item_id):
+    # Página de detalhes do item: ficha técnica + avaliações.
     item = catalog_repo.list_complete(item_id)
     if item is None:
         return redirect(url_for('panel'))
@@ -270,6 +298,7 @@ def list_catalog(item_id):
 @app.route('/admin')
 @admin_required
 def pendent_admin():
+    # Fila de aprovação: itens cadastrados que ainda estão pendentes.
     pendent = catalog_repo.list_by_stock('pendente')
     return render_template('admin.html', catalog=pendent)
 
@@ -277,6 +306,7 @@ def pendent_admin():
 @app.route('/admin/catalog')
 @admin_required
 def item_admin():
+    # Gerenciamento de todos os itens (qualquer status).
     return render_template(
         'item_admin.html',
         items=catalog_repo.list_all(),
@@ -287,6 +317,7 @@ def item_admin():
 @app.route('/admin/item/<int:item_id>/stock', methods=['POST'])
 @admin_required
 def admin_update_stock(item_id):
+    # Muda o status do item (aprova, marca esgotado...).
     new_stock = request.form['stock']
 
     if new_stock not in CatalogItem.STATUS_VALIDO:
@@ -294,6 +325,7 @@ def admin_update_stock(item_id):
 
     catalog_repo.update_stock(item_id, new_stock)
 
+    # Volta para a tela de onde veio; só aceita destinos conhecidos.
     origin = request.form.get('origin', 'item_admin')
     if origin not in ('item_admin', 'pendent_admin'):
         origin = 'item_admin'
@@ -303,6 +335,7 @@ def admin_update_stock(item_id):
 @app.route('/admin/item/<int:item_id>/image', methods=['POST'])
 @admin_required
 def admin_update_image(item_id):
+    # Troca a foto de um item.
     item = catalog_repo.seek_by_items_id(item_id)
     if item is None:
         return redirect(url_for('item_admin'))
@@ -310,6 +343,7 @@ def admin_update_image(item_id):
     try:
         new_image = image_upload.save_item_image(request.files.get('image'), UPLOAD_DIR)
     except ValueError as error:
+        # flash: mensagem de erro exibida uma vez na próxima página.
         flash(f'{item.name}: {error}')
         return redirect(url_for('item_admin'))
 
@@ -321,6 +355,7 @@ def admin_update_image(item_id):
 @app.route('/admin/users')
 @admin_required
 def user_admin():
+    # Lista de usuários para gerenciar acessos.
     return render_template('user_admin.html', users=user_repo.list_all())
 
 
@@ -342,5 +377,6 @@ def new_catalog_item(item_id):
     return redirect(url_for('register_item'))
 
 
+# Só roda o servidor de desenvolvimento quando o arquivo é executado direto.
 if __name__ == '__main__':
     app.run(debug=True)

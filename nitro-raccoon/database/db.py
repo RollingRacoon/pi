@@ -1,9 +1,12 @@
+# Camada de banco de dados: conexão com o MySQL e criação das tabelas.
 import os
 
 import mysql.connector
 
 
 def connect():
+    # Abre uma conexão nova. Os dados vêm de variáveis de ambiente (.env);
+    # os valores depois da vírgula são o padrão para ambiente local.
     return mysql.connector.connect(
         host=os.getenv("DB_HOST", "localhost"),
         user=os.getenv("DB_USER", "root"),
@@ -13,8 +16,11 @@ def connect():
 
 
 def create_catalog():
+    # Cria a tabela do catálogo se ela ainda não existir.
     connection = connect()
     cursor = connection.cursor()
+    # Uma tabela só para todos os tipos de produto: as colunas comuns vêm primeiro
+    # e depois as especificações de cada categoria (ficam NULL quando não se aplicam).
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS items_catalog (
     items_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -121,7 +127,7 @@ def create_catalog():
     )
     """)
 
-    # Bancos criados com a versão antiga têm `stock INT`, mas o app usa texto
+    # Migração: bancos criados com a versão antiga têm `stock INT`, mas o app usa texto
     # ('pendente', 'em estoque', 'esgotado'). Converte uma única vez.
     cursor.execute(
         "SELECT DATA_TYPE FROM information_schema.COLUMNS "
@@ -130,6 +136,7 @@ def create_catalog():
     )
     row = cursor.fetchone()
     data_type = row[0] if row else 'varchar'
+    # Dependendo da versão do conector, o tipo pode vir como bytes.
     if isinstance(data_type, (bytes, bytearray)):
         data_type = data_type.decode()
     if str(data_type).lower() != 'varchar':
@@ -138,7 +145,7 @@ def create_catalog():
             "MODIFY stock VARCHAR(20) NOT NULL DEFAULT 'pendente'"
         )
 
-    # Bancos criados antes das fotos não têm a coluna `image`.
+    # Migração: bancos criados antes das fotos não têm a coluna `image`.
     cursor.execute(
         "SELECT COUNT(*) FROM information_schema.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items_catalog' "
@@ -152,8 +159,10 @@ def create_catalog():
 
 
 def create_ratings():
+    # Tabela de avaliações. Cada nota pertence a um item do catálogo.
     connection = connect()
     cursor = connection.cursor()
+    # ON DELETE CASCADE: se o item for apagado, suas avaliações somem junto.
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ratings (
         rating_id INT AUTO_INCREMENT PRIMARY KEY,
